@@ -1165,7 +1165,11 @@ app.post(
 );
 
 // ==========================================
-// VERCEL
+// START SERVER
 // ==========================================
+
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Trust Bank server running on port ${PORT}`);
+});
 
 module.exports = app;
