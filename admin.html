@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Trust Bank Admin</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #111827;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 7px 0;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+        }
+
+        button {
+            border: 0;
+            padding: 11px 15px;
+            border-radius: 7px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .primary {
+            background: #111827;
+            color: white;
+        }
+
+        .green {
+            background: #15803d;
+            color: white;
+        }
+
+        .red {
+            background: #dc2626;
+            color: white;
+        }
+
+        .gray {
+            background: #e5e7eb;
+        }
+
+        .account {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 15px;
+        }
+
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status-active {
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .status-blocked {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 7px;
+        }
+
+        .transactions {
+            background: #f9fafb;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 7px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<header>
+
+    <h1>Trust Bank Admin</h1>
+
+    <button
+        class="gray"
+        id="adminLogout"
+    >
+        Admin Logout
+    </button>
+
+</header>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>
+            Create New Customer Account
+        </h2>
+
+        <div id="createMessage"></div>
+
+        <input
+            id="newName"
+            placeholder="Full Name"
+        >
+
+        <input
+            id="newUsername"
+            placeholder="Username"
+        >
+
+        <input
+            id="newPassword"
+            type="password"
+            placeholder="Password"
+        >
+
+        <input
+            id="newAccountNumber"
+            placeholder="Account Number (optional)"
+        >
+
+        <select id="newAccountType">
+
+            <option value="Current Account">
+                Current Account
+            </option>
+
+            <option value="Savings Account">
+                Savings Account
+            </option>
+
+        </select>
+
+        <select id="newCurrency">
+
+            <option value="USD">
+                USD
+            </option>
+
+            <option value="NGN">
+                NGN
+            </option>
+
+            <option value="GBP">
+                GBP
+            </option>
+
+            <option value="EUR">
+                EUR
+            </option>
+
+        </select>
+
+        <input
+            id="newBalance"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Starting Balance"
+        >
+
+        <input
+            id="newEmail"
+            placeholder="Email"
+        >
+
+        <input
+            id="newPhone"
+            placeholder="Phone"
+        >
+
+        <input
+            id="newAddress"
+            placeholder="Address"
+        >
+
+        <button
+            class="primary"
+            id="createAccountBtn"
+        >
+            Create Account
+        </button>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="account-header">
+
+            <h2>
+                Customer Accounts
+            </h2>
+
+            <button
+                class="primary"
+                id="refreshBtn"
+            >
+                Refresh
+            </button>
+
+        </div>
+
+        <div id="accountsList"></div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+if (
+    sessionStorage.getItem(
+        "trustBankAdmin"
+    ) !== "true"
+) {
+
+    window.location.href =
+        "/admin-login.html";
+
+}
+
+
+const accountsList =
+    document.getElementById(
+        "accountsList"
+    );
+
+
+const createMessage =
+    document.getElementById(
+        "createMessage"
+    );
+
+
+// ==========================================
+// LOAD ACCOUNTS
+// ==========================================
+
+async function loadAccounts() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/admin/accounts"
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                result.message
+            );
+
+        }
+
+
+        renderAccounts(
+            result.accounts
+        );
+
+
+    } catch (error) {
+
+        accountsList.innerHTML =
+            `<p>Unable to load accounts.</p>`;
+
+        console.error(error);
+
+    }
+
+}
+
+
+// ==========================================
+// RENDER ACCOUNTS
+// ==========================================
+
+function renderAccounts(
+    accounts
+) {
+
+    if (
+        !accounts.length
+    ) {
+
+        accountsList.innerHTML =
+            "<p>No customer accounts.</p>";
+
+        return;
+
+    }
+
+
+    accountsList.innerHTML =
+        accounts.map(
+            account => {
+
+                const statusClass =
+                    account.status ===
+                    "blocked"
+                        ? "status-blocked"
+                        : "status-active";
+
+
+                return `
+
+                    <div class="account">
+
+                        <div class="account-header">
+
+                            <div>
+
+                                <h3>
+                                    ${escapeHtml(account.name)}
+                                </h3>
+
+                                <p>
+                                    Username:
+                                    ${escapeHtml(account.username)}
+                                </p>
+
+                                <p>
+                                    Account:
+                                    ${escapeHtml(account.accountNumber)}
+                                </p>
+
+                                <p>
+                                    Type:
+                                    ${escapeHtml(account.accountType)}
+                                </p>
+
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    ${escapeHtml(account.currency)}
+                                    ${Number(account.balance).toLocaleString()}
+                                </h3>
+
+                                <p class="${statusClass}">
+                                    ${escapeHtml(account.status)}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            class="green"
+                            onclick="topUp('${account.id}')"
+                        >
+                            Top Up
+                        </button>
+
+
+                        <button
+                            class="red"
+                            onclick="deductBalance('${account.id}')"
+                        >
+                            Deduct
+                        </button>
+
+
+                        ${
+                            account.status ===
+                            "blocked"
+
+                            ?
+
+                            `<button
+                                class="green"
+                                onclick="changeStatus('${account.id}', 'active')"
+                            >
+                                Unblock
+                            </button>`
+
+                            :
+
+                            `<button
+                                class="red"
+                                onclick="changeStatus('${account.id}', 'blocked')"
+                            >
+                                Block
+                            </button>`
+                        }
+
+
+                        <button
+                            class="gray"
+                            onclick="viewTransactions('${account.id}')"
+                        >
+                            View Transactions
+                        </button>
+
+
+                        <div
+                            id="transactions-${account.id}"
+                            class="transactions hidden"
+                        ></div>
+
+                    </div>
+
+                `;
+
+            }
+        ).join("");
+
+}
+
+
+// ==========================================
+// CREATE ACCOUNT
+// ==========================================
+
+document
+    .getElementById(
+        "createAccountBtn"
+    )
+    .addEventListener(
+        "click",
+        async function() {
+
+            createMessage.innerHTML = "";
+
+
+            const accountData = {
+
+                name:
+                    document
+                        .getElementById(
+                            "newName"
+                        )
+                        .value
+                        .trim(),
+
+                username:
+                    document
+                        .getElementById(
+                            "newUsername"
+                        )
+                        .value
+                        .trim(),
+
+                password:
+                    document
+                        .getElementById(
+                            "newPassword"
+                        )
+                        .value,
+
+                accountNumber:
+                    document
+                        .getElementById(
+                            "newAccountNumber"
+                        )
+                        .value
+                        .trim(),
+
+                accountType:
+                    document
+                        .getElementById(
+                            "newAccountType"
+                        )
+                        .value,
+
+                currency:
+                    document
+                        .getElementById(
+                            "newCurrency"
+                        )
+                        .value,
+
+                balance:
+                    Number(
+                        document
+                            .getElementById(
+                                "newBalance"
+                            )
+                            .value
+                    ) || 0,
+
+                email:
+                    document
+                        .getElementById(
+                            "newEmail"
+                        )
+                        .value
+                        .trim(),
+
+                phone:
+                    document
+                        .getElementById(
+                            "newPhone"
+                        )
+                        .value
+                        .trim(),
+
+                address:
+                    document
+                        .getElementById(
+                            "newAddress"
+                        )
+                        .value
+                        .trim()
+
+            };
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/admin/accounts",
+                        {
+
+                            method:
+                                "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    accountData
+                                )
+
+                        }
+                    );
+
+
+                const result =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    createMessage.innerHTML =
+                        `<div class="message">
+                            ${escapeHtml(result.message)}
+                        </div>`;
+
+                    return;
+
+                }
+
+
+                createMessage.innerHTML =
+                    `<div class="message">
+                        Account created successfully.
+                    </div>`;
+
+
+                document
+                    .getElementById(
+                        "newName"
+                    )
+                    .value = "";
+
+                document
+                    .getElementById(
+                        "newUsername"
+                    )
+                    .value = "";
+
+                document
+                    .getElementById(
+                        "newPassword"
+                    )
+                    .value = "";
+
+                document
+                    .getElementById(
+                        "newAccountNumber"
+                    )
+                    .value = "";
+
+                document
+                    .getElementById(
+                        "newBalance"
+                    )
+                    .value = "";
+
+                document
+                    .getElementById(
+                        "newEmail"
+                    )
+                    .value = "";
+
+                document
+                    .getElementById(
+                        "newPhone"
+                    )
+                    .value = "";
+
+                document
+                    .getElementById(
+                        "newAddress"
+                    )
+                    .value = "";
+
+
+                loadAccounts();
+
+            } catch (error) {
+
+                createMessage.innerHTML =
+                    `<div class="message">
+                        Unable to connect to the server.
+                    </div>`;
+
+                console.error(error);
+
+            }
+
+        }
+    );
+
+
+// ==========================================
+// TOP UP
+// ==========================================
+
+async function topUp(
+    accountId
+) {
+
+    const amount =
+        prompt(
+            "Enter amount to top up:"
+        );
+
+
+    if (
+        amount === null
+    ) {
+        return;
+    }
+
+
+    const reason =
+        prompt(
+            "Enter reason for top up:"
+        ) || "Admin Balance Top Up";
+
+
+    await adjustBalance(
+        accountId,
+        "topup",
+        amount,
+        reason
+    );
+
+}
+
+
+// ==========================================
+// DEDUCT
+// ==========================================
+
+async function deductBalance(
+    accountId
+) {
+
+    const amount =
+        prompt(
+            "Enter amount to deduct:"
+        );
+
+
+    if (
+        amount === null
+    ) {
+        return;
+    }
+
+
+    const reason =
+        prompt(
+            "Enter reason for deduction:"
+        ) || "Admin Balance Deduction";
+
+
+    await adjustBalance(
+        accountId,
+        "deduct",
+        amount,
+        reason
+    );
+
+}
+
+
+// ==========================================
+// BALANCE ADJUSTMENT
+// ==========================================
+
+async function adjustBalance(
+    accountId,
+    action,
+    amount,
+    reason
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/admin/accounts/${accountId}/balance`,
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        action: action,
+
+                        amount: Number(amount),
+
+                        reason: reason
+
+                    })
+
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                result.message ||
+                "Balance update failed."
+            );
+
+            return;
+
+        }
+
+
+        alert(
+            result.message +
+            "\nNew balance: $" +
+            Number(result.balance).toLocaleString(
+                "en-US",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            )
+        );
+
+
+        loadAccounts();
+
+
+    } catch (error) {
+
+        console.error(
+            "Balance adjustment error:",
+            error
+        );
+
+        alert(
+            "Unable to connect to the server."
+        );
+
+    }
+
+}
+
+// ==========================================
+// BLOCK / UNBLOCK
+// ==========================================
+
+async function changeStatus(
+    accountId,
+    status
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/admin/accounts/${accountId}/status`,
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            status:
+                                status
+                        })
+
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                result.message
+            );
+
+            return;
+
+        }
+
+
+        alert(
+            result.message
+        );
+
+
+        loadAccounts();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to connect to the server."
+        );
+
+    }
+
+}
+
+
+// ==========================================
+// VIEW TRANSACTIONS
+// ==========================================
+
+async function viewTransactions(
+    accountId
+) {
+
+    const box =
+        document.getElementById(
+            `transactions-${accountId}`
+        );
+
+
+    if (
+        !box
+    ) {
+        return;
+    }
+
+
+    if (
+        !box.classList.contains(
+            "hidden"
+        )
+    ) {
+
+        box.classList.add(
+            "hidden"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/admin/accounts/${accountId}`
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                result.message
+            );
+
+            return;
+
+        }
+
+
+        const transactions =
+            result.account.transactions ||
+            [];
+
+
+        if (
+            transactions.length === 0
+        ) {
+
+            box.innerHTML =
+                "<p>No transactions.</p>";
+
+        } else {
+
+            box.innerHTML =
+                transactions
+                    .map(
+                        transaction => `
+
+                            <div>
+
+                                <strong>
+                                    ${escapeHtml(
+                                        transaction.description ||
+                                        transaction.type ||
+                                        "Transaction"
+                                    )}
+                                </strong>
+
+                                <p>
+                                    Amount:
+                                    ${escapeHtml(
+                                        result.account.currency
+                                    )}
+                                    ${Number(
+                                        transaction.amount || 0
+                                    ).toLocaleString()}
+                                </p>
+
+                                <p>
+                                    Recipient:
+                                    ${escapeHtml(
+                                        transaction.recipient ||
+                                        "N/A"
+                                    )}
+                                </p>
+
+                                <p>
+                                    Reference:
+                                    ${escapeHtml(
+                                        transaction.reference ||
+                                        "N/A"
+                                    )}
+                                </p>
+
+                                <small>
+                                    ${escapeHtml(
+                                        transaction.date ||
+                                        ""
+                                    )}
+                                </small>
+
+                                <hr>
+
+                            </div>
+
+                        `
+                    )
+                    .join("");
+
+        }
+
+
+        box.classList.remove(
+            "hidden"
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to load transactions."
+        );
+
+    }
+
+}
+
+
+// ==========================================
+// LOGOUT
+// ==========================================
+
+document
+    .getElementById(
+        "adminLogout"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            sessionStorage.removeItem(
+                "trustBankAdmin"
+            );
+
+            window.location.href =
+                "/admin-login.html";
+
+        }
+    );
+
+
+// ==========================================
+// REFRESH
+// ==========================================
+
+document
+    .getElementById(
+        "refreshBtn"
+    )
+    .addEventListener(
+        "click",
+        loadAccounts
+    );
+
+
+// ==========================================
+// HTML SAFETY
+// ==========================================
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+// ==========================================
+// INITIAL LOAD
+// ==========================================
+
+loadAccounts();
+
+</script>
+
+</body>
+
+</html>

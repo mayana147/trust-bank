@@ -1,0 +1,140 @@
+{
+  "admin": {
+    "username": "admin",
+    "password": "TrustAdmin2026"
+  },
+  "accounts": [
+    {
+      "id": "ACC-DAVIES",
+      "name": "Davies Allen",
+      "username": "daviesallen",
+      "password": "myTbank123",
+      "accountNumber": "48217394",
+      "balance": 917450,
+      "status": "active",
+      "transactions": [
+        {
+          "type": "Transfer",
+          "description": "Money Transfer",
+          "recipient": "Brad krizler",
+          "amount": 7400,
+          "status": "Successful",
+          "reference": "TB-265241",
+          "date": "8/12/2026, 6:06:18 PM"
+        },
+        {
+          "type": "Admin Debit",
+          "description": "Shopping",
+          "recipient": "Davies Allen",
+          "amount": 1200,
+          "status": "Successful",
+          "reference": "ADM-966706",
+          "date": "8/12/2026, 5:43:00 PM"
+        },
+        {
+          "type": "Admin Credit",
+          "description": "Gas",
+          "recipient": "Davies Allen",
+          "amount": 1200,
+          "status": "Successful",
+          "reference": "ADM-750106",
+          "date": "8/12/2026, 5:42:14 PM"
+        },
+        {
+          "type": "Admin Credit",
+          "description": "Gas",
+          "recipient": "Davies Allen",
+          "amount": 1250,
+          "status": "Successful",
+          "reference": "ADM-153440",
+          "date": "8/12/2026, 5:23:17 PM"
+        },
+        {
+          "type": "Admin Credit",
+          "description": "Admin Balance Top Up",
+          "recipient": "Davies Allen",
+          "amount": 3200,
+          "status": "Successful",
+          "reference": "ADM-375692",
+          "date": "8/12/2026, 5:13:12 PM"
+        },
+        {
+          "type": "Admin Credit",
+          "description": "Admin Balance Top Up",
+          "recipient": "Davies Allen",
+          "amount": 1200,
+          "status": "Successful",
+          "reference": "ADM-547405",
+          "date": "8/12/2026, 4:57:00 PM"
+        },
+        {
+          "type": "Admin Debit",
+          "description": "Admin Balance Top Up",
+          "recipient": "Davies Allen",
+          "amount": 500,
+          "status": "Successful",
+          "reference": "ADM-657858",
+          "date": "8/12/2026, 4:56:23 PM"
+        },
+        {
+          "type": "Admin Credit",
+          "description": "Admin Balance Top Up",
+          "recipient": "Davies Allen",
+          "amount": 1200,
+          "status": "Successful",
+          "reference": "ADM-915887",
+          "date": "8/12/2026, 4:55:16 PM"
+        },
+        {
+          "type": "Transfer",
+          "description": "Money Transfer",
+          "recipient": "Brad krizler",
+          "amount": 2500,
+          "status": "Successful",
+          "reference": "TB-401291",
+          "date": "8/12/2026, 9:40:07 AM"
+        }
+      ]
+    },
+    {
+      "id": "ACC-1786557998750",
+      "name": "Nelson Fernandez",
+      "username": "nelson",
+      "password": "nelson123",
+      "accountNumber": "73529482",
+      "balance": 508000,
+      "status": "active",
+      "transactions": [
+        {
+          "type": "Transfer",
+          "description": "Money Transfer",
+          "recipient": "Morgan elle",
+          "amount": 20000,
+          "status": "Successful",
+          "reference": "TB-773913",
+          "date": "8/12/2026, 8:45:17 PM"
+        }
+      ]
+    },
+    {
+      "id": "ACC-1786560895990",
+      "name": "JOHN TEST",
+      "username": "john",
+      "password": "john123",
+      "accountNumber": "90012345",
+      "balance": 140000,
+      "status": "active",
+      "transactions": []
+    },
+    {
+      "id": "ACC-1786562258914",
+      "name": "JUDE SMITH",
+      "username": "jude",
+      "password": "jude123",
+      "accountNumber": "1234567890",
+      "balance": 74000,
+      "status": "active",
+      "transactions": []
+    }
+  ]
+}
