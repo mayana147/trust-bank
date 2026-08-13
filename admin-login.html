@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Trust Bank Admin Login</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+    <div class="login-section">
+
+        <h2>
+            Trust Bank Admin
+        </h2>
+
+        <p>
+            Administrator Login
+        </p>
+
+        <form id="adminLoginForm">
+
+            <input
+                type="text"
+                id="adminUsername"
+                placeholder="Admin Username"
+            >
+
+            <input
+                type="password"
+                id="adminPassword"
+                placeholder="Admin Password"
+            >
+
+            <button type="submit">
+                Admin Login
+            </button>
+
+            <div id="adminLoginMessage"></div>
+
+        </form>
+
+    </div>
+
+
+<script>
+
+document
+    .getElementById(
+        "adminLoginForm"
+    )
+    .addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+
+            const username =
+                document
+                    .getElementById(
+                        "adminUsername"
+                    )
+                    .value
+                    .trim();
+
+
+            const password =
+                document
+                    .getElementById(
+                        "adminPassword"
+                    )
+                    .value;
+
+
+            const message =
+                document
+                    .getElementById(
+                        "adminLoginMessage"
+                    );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/admin/login",
+                        {
+
+                            method:
+                                "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    username:
+                                        username,
+
+                                    password:
+                                        password
+
+                                })
+
+                        }
+                    );
+
+
+                const result =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    message.textContent =
+                        result.message;
+
+                    return;
+
+                }
+
+
+                sessionStorage.setItem(
+                    "trustBankAdmin",
+                    "true"
+                );
+
+
+                window.location.href =
+                    "/admin.html";
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                message.textContent =
+                    "Unable to connect to the server.";
+
+            }
+
+        }
+    );
+
+</script>
+
+</body>
+
+</html>
