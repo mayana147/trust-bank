@@ -1,3 +1,6 @@
+require("dotenv").config();
+const { MongoClient } = require("mongodb");
+
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -5,8 +8,13 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const DATA_FILE = path.join(__dirname, "data.json");
+const mongoClient = new MongoClient(process.env.MONGODB_URI);
 
+const db = mongoClient.db("trustbank");
+const accountsCollection = db.collection("accounts");
+const deletedAccountsCollection = db.collection("deleted_accounts");
+
+const DATA_FILE = path.join(__dirname, "data.json");
 app.use(express.json());
 app.use(express.static(__dirname));
 
@@ -517,17 +525,13 @@ app.post("/api/admin/accounts/status", (req, res) => {
 
 app.delete(
     "/api/admin/accounts/:id",
-    (req, res) => {
+    async (req, res) => {
 
         try {
 
-            const accountId =
-                req.params.id;
+            const accountId = req.params.id;
 
-
-            const data =
-                readData();
-
+            const data = readData();
 
             const accountIndex =
                 data.accounts.findIndex(
@@ -536,33 +540,42 @@ app.delete(
                     }
                 );
 
-
             if (accountIndex === -1) {
 
                 return res.status(404).json({
-
                     success: false,
-
-                    message:
-                        "Account not found."
-
+                    message: "Account not found."
                 });
 
             }
-
 
             const deletedAccount =
                 data.accounts[accountIndex];
 
 
-            // Remove the account
+            // Save deleted account permanently in MongoDB
+            await mongoClient
+                .db("trustbank")
+                .collection("deleted_accounts")
+                .updateOne(
+                    { id: deletedAccount.id },
+                    {
+                        $set: {
+                            ...deletedAccount,
+                            deletedAt: new Date()
+                        }
+                    },
+                    { upsert: true }
+                );
+
+
+            // Remove account from data.json
             data.accounts.splice(
                 accountIndex,
                 1
             );
 
 
-            // Save the updated accounts
             saveData(data);
 
 
@@ -1167,9 +1180,68 @@ app.post(
 // ==========================================
 // START SERVER
 // ==========================================
+mongoClient.connect()
+  .then(async () => {
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Trust Bank server running on port ${PORT}`);
-});
+    console.log("MongoDB connected successfully");
+
+    const deletedAccounts =
+      await deletedAccountsCollection
+        .find({})
+        .toArray();
+
+    if (deletedAccounts.length > 0) {
+
+      const data = readData();
+
+      const deletedIds =
+        new Set(
+          deletedAccounts.map(
+            account => account.id
+          )
+        );
+
+      const originalCount =
+        data.accounts.length;
+
+      data.accounts =
+        data.accounts.filter(
+          account =>
+            !deletedIds.has(account.id)
+        );
+
+      if (
+        data.accounts.length !==
+        originalCount
+      ) {
+
+        saveData(data);
+
+        console.log(
+          `Removed ${originalCount - data.accounts.length} deleted account(s) from data.json`
+        );
+
+      }
+
+    }
+ 
+    app.listen(PORT, "0.0.0.0", () => {
+
+      console.log(
+        `Trust Bank server running on port ${PORT}`
+      );
+
+    });
+
+  })
+  .catch((error) => {
+
+    console.error(
+      "MongoDB connection failed:",
+      error
+    );
+
+  });
+
 
 module.exports = app;
