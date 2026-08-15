@@ -1248,32 +1248,128 @@ document.addEventListener("DOMContentLoaded", function () {
     // endpoints exist.
 
     document
-        .getElementById("depositBtn")
-        .addEventListener(
-            "click",
-            function () {
+         .getElementById("depositBtn")
+         .addEventListener(
+             "click",
+             showDepositPage
+          );
 
-                alert(
-                    "Deposit service will be connected to your banking backend."
-                );
 
-            }
+     document
+         .getElementById("withdrawBtn")
+         .addEventListener(
+             "click",
+             showWithdrawalPage
+         );
+}
+
+async function submitDepositRequest() {
+
+    const method =
+        document
+            .getElementById("depositMethod")
+            .value;
+
+    const amount =
+        Number(
+            document
+                .getElementById("depositAmount")
+                .value
+        );
+
+    const message =
+        document
+            .getElementById("depositMessage");
+
+
+    if (!method) {
+
+        message.textContent =
+            "Please select a deposit method.";
+
+        return;
+    }
+
+
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0
+    ) {
+
+        message.textContent =
+            "Please enter a valid amount.";
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/deposit",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            accountId:
+                                CURRENT_ACCOUNT_ID,
+
+                            amount:
+                                amount,
+
+                            method:
+                                method
+
+                        })
+
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            message.textContent =
+                result.message ||
+                "Deposit request failed.";
+
+            return;
+        }
+
+
+        message.textContent =
+            "Deposit request submitted. Status: Pending.";
+
+
+        setTimeout(
+            showHistoryPage,
+            1200
         );
 
 
-    document
-        .getElementById("withdrawBtn")
-        .addEventListener(
-            "click",
-            function () {
+    } catch (error) {
 
-                alert(
-                    "Withdrawal service will be connected to your banking backend."
-                );
-
-            }
+        console.error(
+            "Deposit request error:",
+            error
         );
 
+        message.textContent =
+            "Unable to connect to the banking server.";
+
+    }
 }
 
 
@@ -1437,6 +1533,505 @@ document.addEventListener("DOMContentLoaded", function () {
             );
     }
 
+    // =============================================================
+// DEPOSIT PAGE
+// =============================================================
+
+function showDepositPage() {
+
+    const currency =
+        CURRENT_ACCOUNT.currency ||
+        "$";
+
+    document.body.innerHTML = `
+
+        <header class="bank-header">
+
+            <div class="bank-logo">
+                TRUST BANK
+            </div>
+
+            <nav class="bank-nav">
+
+                <button id="depositBack">
+                    Dashboard
+                </button>
+
+                <button id="depositHistory">
+                    Transactions
+                </button>
+
+                <button id="depositLogout">
+                    Logout
+                </button>
+
+            </nav>
+
+        </header>
+
+
+        <main class="dashboard">
+
+            <section class="dashboard-welcome">
+
+                <div>
+
+                    <p class="dashboard-label">
+                        TRUST BANK
+                    </p>
+
+                    <h1>
+                        Deposit Funds
+                    </h1>
+
+                    <p class="dashboard-subtitle">
+                        Choose how you want to deposit funds.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <section class="bank-form-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <span class="section-label">
+                            ADD FUNDS
+                        </span>
+
+                        <h2>
+                            Deposit Method
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <label>
+                    Deposit Method
+                </label>
+
+                <select id="depositMethod">
+
+                    <option value="">
+                        Select a method
+                    </option>
+
+                    <option value="Cash App">
+                        Cash App
+                    </option>
+
+                    <option value="Zelle">
+                        Zelle
+                    </option>
+
+                    <option value="Bitcoin">
+                        Bitcoin
+                    </option>
+
+                    <option value="Card">
+                        Card
+                    </option>
+
+                </select>
+
+
+                <label>
+                    Amount
+                </label>
+
+                <div class="money-input">
+
+                    <span>
+                        ${escapeHtml(currency)}
+                    </span>
+
+                    <input
+                        id="depositAmount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                    >
+
+                </div>
+
+
+                <button
+                    id="submitDeposit"
+                    class="primary-bank-button"
+                >
+                    Submit Deposit
+                </button>
+
+
+                <button
+                    id="cancelDeposit"
+                    class="secondary-bank-button"
+                >
+                    Cancel
+                </button>
+
+
+                <div
+                    id="depositMessage"
+                    class="bank-form-message"
+                ></div>
+
+            </section>
+
+        </main>
+
+    `;
+
+
+    document
+        .getElementById("submitDeposit")
+        .addEventListener(
+            "click",
+            submitDepositRequest
+        );
+
+
+    document
+        .getElementById("cancelDeposit")
+        .addEventListener(
+            "click",
+            showDashboard
+        );
+
+
+    document
+        .getElementById("depositBack")
+        .addEventListener(
+            "click",
+            showDashboard
+        );
+
+
+    document
+        .getElementById("depositHistory")
+        .addEventListener(
+            "click",
+            showHistoryPage
+        );
+
+
+    document
+        .getElementById("depositLogout")
+        .addEventListener(
+            "click",
+            logout
+        );
+}
+
+// =============================================================
+// WITHDRAWAL PAGE
+// =============================================================
+
+function showWithdrawalPage() {
+
+    const currency =
+        CURRENT_ACCOUNT.currency ||
+        "$";
+
+    document.body.innerHTML = `
+
+        <header class="bank-header">
+
+            <div class="bank-logo">
+                TRUST BANK
+            </div>
+
+            <nav class="bank-nav">
+
+                <button id="withdrawBack">
+                    Dashboard
+                </button>
+
+                <button id="withdrawHistory">
+                    Transactions
+                </button>
+
+                <button id="withdrawLogout">
+                    Logout
+                </button>
+
+            </nav>
+
+        </header>
+
+
+        <main class="dashboard">
+
+            <section class="dashboard-welcome">
+
+                <div>
+
+                    <p class="dashboard-label">
+                        TRUST BANK
+                    </p>
+
+                    <h1>
+                        Withdraw Funds
+                    </h1>
+
+                    <p class="dashboard-subtitle">
+                        Choose how you want to withdraw funds.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <section class="bank-form-card">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <span class="section-label">
+                            WITHDRAW FUNDS
+                        </span>
+
+                        <h2>
+                            Withdrawal Method
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <label>
+                    Withdrawal Method
+                </label>
+
+                <select id="withdrawMethod">
+
+                    <option value="">
+                        Select a method
+                    </option>
+
+                    <option value="Bitcoin">
+                        Bitcoin
+                    </option>
+
+                    <option value="Cash">
+                        Cash
+                    </option>
+
+                </select>
+
+
+                <label>
+                    Amount
+                </label>
+
+                <div class="money-input">
+
+                    <span>
+                        ${escapeHtml(currency)}
+                    </span>
+
+                    <input
+                        id="withdrawAmount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                    >
+
+                </div>
+
+
+                <button
+                    id="submitWithdrawal"
+                    class="primary-bank-button"
+                >
+                    Submit Withdrawal
+                </button>
+
+
+                <button
+                    id="cancelWithdrawal"
+                    class="secondary-bank-button"
+                >
+                    Cancel
+                </button>
+
+
+                <div
+                    id="withdrawMessage"
+                    class="bank-form-message"
+                ></div>
+
+            </section>
+
+        </main>
+
+    `;
+
+
+    document
+        .getElementById("submitWithdrawal")
+        .addEventListener(
+            "click",
+            submitWithdrawalRequest
+        );
+
+
+    document
+        .getElementById("cancelWithdrawal")
+        .addEventListener(
+            "click",
+            showDashboard
+        );
+
+
+    document
+        .getElementById("withdrawBack")
+        .addEventListener(
+            "click",
+            showDashboard
+        );
+
+
+    document
+        .getElementById("withdrawHistory")
+        .addEventListener(
+            "click",
+            showHistoryPage
+        );
+
+
+    document
+        .getElementById("withdrawLogout")
+        .addEventListener(
+            "click",
+            logout
+        );
+
+}
+
+// =============================================================
+// SUBMIT WITHDRAWAL REQUEST
+// =============================================================
+
+async function submitWithdrawalRequest() {
+
+    const method =
+        document
+            .getElementById("withdrawMethod")
+            .value;
+
+    const amount =
+        Number(
+            document
+                .getElementById("withdrawAmount")
+                .value
+        );
+
+    const message =
+        document
+            .getElementById("withdrawMessage");
+
+
+    if (!method) {
+
+        message.textContent =
+            "Please select a withdrawal method.";
+
+        return;
+    }
+
+
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0
+    ) {
+
+        message.textContent =
+            "Please enter a valid amount.";
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/withdraw",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            accountId:
+                                CURRENT_ACCOUNT_ID,
+
+                            amount:
+                                amount,
+
+                            method:
+                                method
+
+                        })
+
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            message.textContent =
+                result.message ||
+                "Withdrawal request failed.";
+
+            return;
+        }
+
+
+        message.textContent =
+            "Withdrawal request submitted. Status: Pending.";
+
+
+        setTimeout(
+            showHistoryPage,
+            1200
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Withdrawal request error:",
+            error
+        );
+
+        message.textContent =
+            "Unable to connect to the banking server.";
+
+    }
+}
 
     // =========================================================
     // MY CARDS

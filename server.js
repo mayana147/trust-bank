@@ -1011,6 +1011,308 @@ app.post(
     }
 );
 
+// ==========================================
+// DEPOSIT REQUEST
+// ==========================================
+
+app.post(
+    "/api/deposit",
+    async (req, res) => {
+
+        try {
+
+            const {
+                accountId,
+                amount,
+                method
+            } = req.body;
+
+            const depositAmount =
+                Number(amount);
+
+            const allowedMethods = [
+                "Cash App",
+                "Zelle",
+                "Bitcoin",
+                "Card"
+            ];
+
+            if (
+                !accountId ||
+                !allowedMethods.includes(method) ||
+                !Number.isFinite(depositAmount) ||
+                depositAmount <= 0
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid deposit details."
+                });
+
+            }
+
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
+
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            if (
+                account.status === "blocked"
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "This account is blocked."
+                });
+
+            }
+
+            const transaction = {
+
+                type:
+                    "Deposit",
+
+                description:
+                    `${method} Deposit`,
+
+                recipient:
+                    account.name,
+
+                amount:
+                    depositAmount,
+
+                method:
+                    method,
+
+                status:
+                    "Pending",
+
+                reference:
+                    generateReference("DEP"),
+
+                date:
+                    new Date().toLocaleString()
+
+            };
+
+            await accountsCollection.updateOne(
+
+                {
+                    id: accountId
+                },
+
+                {
+                    $push: {
+                        transactions: {
+                            $each: [transaction],
+                            $position: 0
+                        }
+                    }
+
+                }
+
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Deposit request submitted successfully.",
+
+                transaction:
+                    transaction
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Deposit request error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to process deposit request."
+            });
+
+        }
+
+    }
+);
+
+// ==========================================
+// WITHDRAWAL REQUEST
+// ==========================================
+
+app.post(
+    "/api/withdraw",
+    async (req, res) => {
+
+        try {
+
+            const {
+                accountId,
+                amount,
+                method
+            } = req.body;
+
+            const withdrawalAmount =
+                Number(amount);
+
+            const allowedMethods = [
+                "Bitcoin",
+                "Cash"
+            ];
+
+            if (
+                !accountId ||
+                !allowedMethods.includes(method) ||
+                !Number.isFinite(withdrawalAmount) ||
+                withdrawalAmount <= 0
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid withdrawal details."
+                });
+
+            }
+
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
+
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            if (
+                account.status === "blocked"
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "This account is blocked."
+                });
+
+            }
+
+            const currentBalance =
+                Number(account.balance) || 0;
+
+            if (
+                withdrawalAmount >
+                currentBalance
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Insufficient balance."
+                });
+
+            }
+
+            const transaction = {
+
+                type:
+                    "Withdrawal",
+
+                description:
+                    `${method} Withdrawal`,
+
+                recipient:
+                    account.name,
+
+                amount:
+                    withdrawalAmount,
+
+                method:
+                    method,
+
+                status:
+                    "Pending",
+
+                reference:
+                    generateReference("WTH"),
+
+                date:
+                    new Date().toLocaleString()
+
+            };
+
+            await accountsCollection.updateOne(
+
+                {
+                    id: accountId
+                },
+
+                {
+                    $push: {
+                        transactions: {
+                            $each: [transaction],
+                            $position: 0
+                        }
+                    }
+
+                }
+
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Withdrawal request submitted successfully.",
+
+                transaction:
+                    transaction
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Withdrawal request error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to process withdrawal request."
+            });
+
+        }
+
+    }
+);
+
 
 // ==========================================
 // ADMIN BALANCE ADJUSTMENT
@@ -1191,6 +1493,296 @@ app.post(
     }
 );
 
+// ==========================================
+// DEPOSIT REQUEST
+// ==========================================
+
+app.post(
+    "/api/deposit",
+    async (req, res) => {
+
+        try {
+
+            const {
+                accountId,
+                amount,
+                method
+            } = req.body;
+
+            const depositAmount =
+                Number(amount);
+
+            const allowedMethods = [
+                "Cash App",
+                "Zelle",
+                "Bitcoin",
+                "Card"
+            ];
+
+            if (
+                !accountId ||
+                !Number.isFinite(depositAmount) ||
+                depositAmount <= 0 ||
+                !allowedMethods.includes(method)
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid deposit details."
+                });
+
+            }
+
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
+
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            if (
+                account.status === "blocked"
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "This account is blocked."
+                });
+
+            }
+
+            const transaction = {
+
+                type:
+                    "Deposit",
+
+                description:
+                    `${method} Deposit`,
+
+                method:
+                    method,
+
+                amount:
+                    depositAmount,
+
+                status:
+                    "Pending",
+
+                reference:
+                    generateReference("DEP"),
+
+                date:
+                    new Date().toLocaleString()
+
+            };
+
+            await accountsCollection.updateOne(
+
+                { id: accountId },
+
+                {
+                    $push: {
+                        transactions: {
+                            $each: [transaction],
+                            $position: 0
+                        }
+                    }
+                }
+
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Deposit request submitted and is pending approval.",
+
+                transaction:
+                    transaction
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Deposit error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to process deposit request."
+            });
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// WITHDRAWAL REQUEST
+// ==========================================
+
+app.post(
+    "/api/withdraw",
+    async (req, res) => {
+
+        try {
+
+            const {
+                accountId,
+                amount,
+                method
+            } = req.body;
+
+            const withdrawalAmount =
+                Number(amount);
+
+            const allowedMethods = [
+                "Bitcoin",
+                "Cash"
+            ];
+
+            if (
+                !accountId ||
+                !Number.isFinite(withdrawalAmount) ||
+                withdrawalAmount <= 0 ||
+                !allowedMethods.includes(method)
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid withdrawal details."
+                });
+
+            }
+
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
+
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            if (
+                account.status === "blocked"
+            ) {
+
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "This account is blocked."
+                });
+
+            }
+
+            const currentBalance =
+                Number(account.balance) || 0;
+
+            if (
+                withdrawalAmount >
+                currentBalance
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Insufficient balance."
+                });
+
+            }
+
+            const transaction = {
+
+                type:
+                    "Withdrawal",
+
+                description:
+                    `${method} Withdrawal`,
+
+                method:
+                    method,
+
+                amount:
+                    withdrawalAmount,
+
+                status:
+                    "Pending",
+
+                reference:
+                    generateReference("WDL"),
+
+                date:
+                    new Date().toLocaleString()
+
+            };
+
+            await accountsCollection.updateOne(
+
+                { id: accountId },
+
+                {
+                    $push: {
+                        transactions: {
+                            $each: [transaction],
+                            $position: 0
+                        }
+                    }
+                }
+
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Withdrawal request submitted and is pending approval.",
+
+                transaction:
+                    transaction
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Withdrawal error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to process withdrawal request."
+            });
+
+        }
+
+    }
+);
 
 // ==========================================
 // IMPORT EXISTING DATA.JSON

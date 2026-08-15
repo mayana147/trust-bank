@@ -4037,3 +4037,107 @@ body {
     }
 
 }
+
+/* ================================
+   DEPOSIT PAGE
+   ================================ */
+
+.bank-form-card {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+.bank-form-card label {
+    display: block;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.bank-form-card select,
+.bank-form-card input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+    background: #ffffff;
+    font-size: 15px;
+    outline: none;
+}
+
+.bank-form-card select:focus,
+.bank-form-card input:focus {
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.08);
+}
+
+.money-input {
+    display: flex;
+    align-items: center;
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.money-input span {
+    padding: 14px 0 14px 16px;
+    font-weight: 600;
+}
+
+.money-input input {
+    border: none;
+    box-shadow: none;
+}
+
+.money-input input:focus {
+    box-shadow: none;
+}
+
+.primary-bank-button,
+.secondary-bank-button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 20px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary-bank-button {
+    border: none;
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.secondary-bank-button {
+    border: 1px solid #dddddd;
+    background: #ffffff;
+    color: #333333;
+}
+
+.primary-bank-button:hover,
+.secondary-bank-button:hover {
+    transform: translateY(-1px);
+}
+
+.bank-form-message {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .bank-form-card {
+        margin: 0 15px;
+        padding: 22px;
+    }
+}
