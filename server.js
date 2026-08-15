@@ -1,26 +1,47 @@
 require("dotenv").config();
-const { MongoClient } = require("mongodb");
 
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const { MongoClient } = require("mongodb");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const mongoClient = new MongoClient(process.env.MONGODB_URI);
-
-const db = mongoClient.db("trustbank");
-const accountsCollection = db.collection("accounts");
-const deletedAccountsCollection = db.collection("deleted_accounts");
-
 const DATA_FILE = path.join(__dirname, "data.json");
+
 app.use(express.json());
 app.use(express.static(__dirname));
 
 
 // ==========================================
-// DATA
+// MONGODB
+// ==========================================
+
+if (!process.env.MONGODB_URI) {
+    console.error("MONGODB_URI is missing.");
+    process.exit(1);
+}
+
+const mongoClient = new MongoClient(process.env.MONGODB_URI);
+
+let db;
+let accountsCollection;
+
+
+// ==========================================
+// ADMIN
+// ==========================================
+
+const ADMIN_USERNAME =
+    process.env.ADMIN_USERNAME || "admin";
+
+const ADMIN_PASSWORD =
+    process.env.ADMIN_PASSWORD || "TrustAdmin2026";
+
+
+// ==========================================
+// HELPERS
 // ==========================================
 
 function readData() {
@@ -29,26 +50,64 @@ function readData() {
             fs.readFileSync(DATA_FILE, "utf8")
         );
     } catch (error) {
-
         return {
-            admin: {
-                username: "admin",
-                password: "TrustAdmin2026"
-            },
             accounts: []
         };
-
     }
 }
 
 
-function saveData(data) {
-
-    fs.writeFileSync(
-        DATA_FILE,
-        JSON.stringify(data, null, 2)
+function generateId() {
+    return (
+        "ACC-" +
+        Date.now() +
+        "-" +
+        Math.floor(Math.random() * 100000)
     );
+}
 
+
+function generateReference(prefix) {
+    return (
+        prefix +
+        "-" +
+        Math.floor(
+            100000 +
+            Math.random() * 900000
+        )
+    );
+}
+
+
+function cleanAccount(account) {
+    if (!account) return null;
+
+    return {
+        id: account.id,
+        name: account.name,
+        username: account.username,
+        accountNumber: account.accountNumber,
+        balance: Number(account.balance) || 0,
+        status: account.status || "active",
+        transactions:
+            Array.isArray(account.transactions)
+                ? account.transactions
+                : []
+    };
+}
+
+
+function publicAccount(account) {
+    if (!account) return null;
+
+    return {
+        id: account.id,
+        name: account.name,
+        username: account.username,
+        accountNumber: account.accountNumber,
+        balance: Number(account.balance) || 0,
+        status: account.status || "active"
+    };
 }
 
 
@@ -77,11 +136,9 @@ app.post("/api/admin/login", (req, res) => {
         password
     } = req.body;
 
-    const data = readData();
-
     if (
-        username === data.admin.username &&
-        password === data.admin.password
+        username === ADMIN_USERNAME &&
+        password === ADMIN_PASSWORD
     ) {
 
         return res.json({
@@ -93,7 +150,8 @@ app.post("/api/admin/login", (req, res) => {
 
     res.status(401).json({
         success: false,
-        message: "Incorrect admin username or password."
+        message:
+            "Incorrect admin username or password."
     });
 
 });
@@ -103,62 +161,57 @@ app.post("/api/admin/login", (req, res) => {
 // CUSTOMER LOGIN
 // ==========================================
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
 
-    const {
-        username,
-        password
-    } = req.body;
+    try {
 
-    const data = readData();
+        const {
+            username,
+            password
+        } = req.body;
 
-    const account =
-        data.accounts.find(
-            function (item) {
+        const account =
+            await accountsCollection.findOne({
+                username: username,
+                password: password
+            });
 
-                return (
-                    item.username === username &&
-                    item.password === password
-                );
+        if (!account) {
 
-            }
-        );
+            return res.status(401).json({
+                success: false,
+                message:
+                    "Incorrect username or password."
+            });
 
-
-    if (!account) {
-
-        return res.status(401).json({
-            success: false,
-            message: "Incorrect username or password."
-        });
-
-    }
-
-
-    if (account.status === "blocked") {
-
-        return res.status(403).json({
-            success: false,
-            message: "This account has been blocked."
-        });
-
-    }
-
-
-    res.json({
-
-        success: true,
-
-        account: {
-            id: account.id,
-            name: account.name,
-            username: account.username,
-            accountNumber: account.accountNumber,
-            balance: account.balance,
-            status: account.status
         }
 
-    });
+        if (account.status === "blocked") {
+
+            return res.status(403).json({
+                success: false,
+                message:
+                    "This account has been blocked."
+            });
+
+        }
+
+        res.json({
+            success: true,
+            account: publicAccount(account)
+        });
+
+    } catch (error) {
+
+        console.error("Login error:", error);
+
+        res.status(500).json({
+            success: false,
+            message:
+                "Unable to process login."
+        });
+
+    }
 
 });
 
@@ -167,357 +220,405 @@ app.post("/api/login", (req, res) => {
 // GET ALL ACCOUNTS
 // ==========================================
 
-app.get("/api/admin/accounts", (req, res) => {
+app.get(
+    "/api/admin/accounts",
+    async (req, res) => {
 
-    const data = readData();
+        try {
 
-    const accounts =
-        data.accounts.map(
-            function (account) {
+            const accounts =
+                await accountsCollection
+                    .find({})
+                    .sort({ _id: 1 })
+                    .toArray();
 
-                return {
-                    id: account.id,
-                    name: account.name,
-                    username: account.username,
-                    accountNumber: account.accountNumber,
-                    balance: account.balance,
-                    status: account.status,
-                    transactionCount:
-                        account.transactions
-                            ? account.transactions.length
-                            : 0
-                };
+            res.json({
+                success: true,
+                accounts:
+                    accounts.map(account => ({
+                        id: account.id,
+                        name: account.name,
+                        username: account.username,
+                        accountNumber:
+                            account.accountNumber,
+                        balance:
+                            Number(account.balance) || 0,
+                        status:
+                            account.status || "active",
+                        transactionCount:
+                            Array.isArray(
+                                account.transactions
+                            )
+                                ? account.transactions.length
+                                : 0
+                    }))
+            });
 
-            }
-        );
+        } catch (error) {
 
+            console.error(
+                "Get accounts error:",
+                error
+            );
 
-    res.json({
-        success: true,
-        accounts: accounts
-    });
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to load accounts."
+            });
 
-});
+        }
+
+    }
+);
 
 
 // ==========================================
 // CREATE DEMO ACCOUNT
 // ==========================================
 
-app.post("/api/admin/accounts", (req, res) => {
+app.post(
+    "/api/admin/accounts",
+    async (req, res) => {
 
-    const {
-        name,
-        username,
-        password,
-        accountNumber,
-        balance
-    } = req.body;
+        try {
 
-    if (
-        !name ||
-        !username ||
-        !password ||
-        !accountNumber
-    ) {
+            const {
+                name,
+                username,
+                password,
+                accountNumber,
+                balance
+            } = req.body;
 
-        return res.status(400).json({
-            success: false,
-            message: "Please complete all account fields."
-        });
+            if (
+                !name ||
+                !username ||
+                !password ||
+                !accountNumber
+            ) {
 
-    }
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Please complete all account fields."
+                });
 
-
-    const data = readData();
-
-
-    const usernameExists =
-        data.accounts.some(
-            function (account) {
-                return account.username === username;
             }
-        );
 
+            const usernameExists =
+                await accountsCollection.findOne({
+                    username: username
+                });
 
-    if (usernameExists) {
+            if (usernameExists) {
 
-        return res.status(400).json({
-            success: false,
-            message: "That username already exists."
-        });
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "That username already exists."
+                });
 
-    }
-
-
-    const accountNumberExists =
-        data.accounts.some(
-            function (account) {
-                return account.accountNumber === accountNumber;
             }
-        );
 
+            const accountNumberExists =
+                await accountsCollection.findOne({
+                    accountNumber:
+                        accountNumber
+                });
 
-    if (accountNumberExists) {
+            if (accountNumberExists) {
 
-        return res.status(400).json({
-            success: false,
-            message: "That account number already exists."
-        });
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "That account number already exists."
+                });
 
-    }
+            }
 
+            const startingBalance =
+                Number(balance) || 0;
 
-    const startingBalance =
-        Number(balance) || 0;
+            const newAccount = {
 
+                id: generateId(),
 
-    const newAccount = {
+                name: name,
 
-        id:
-            "ACC-" +
-            Date.now(),
+                username: username,
 
-        name:
-            name,
+                password: password,
 
-        username:
-            username,
+                accountNumber:
+                    accountNumber,
 
-        password:
-            password,
+                balance:
+                    startingBalance,
 
-        accountNumber:
-            accountNumber,
+                status:
+                    "active",
 
-        balance:
-            startingBalance,
+                transactions: [],
 
-        status:
-            "active",
+                createdAt:
+                    new Date()
 
-        transactions:
-            []
+            };
 
-    };
+            await accountsCollection.insertOne(
+                newAccount
+            );
 
+            res.json({
 
-    data.accounts.push(
-        newAccount
-    );
+                success: true,
 
+                message:
+                    "Demo account created successfully.",
 
-    saveData(data);
+                account:
+                    publicAccount(newAccount)
 
+            });
 
-    res.json({
+        } catch (error) {
 
-        success: true,
+            console.error(
+                "Create account error:",
+                error
+            );
 
-        message:
-            "Demo account created successfully.",
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to create account."
+            });
 
-        account: {
-            id: newAccount.id,
-            name: newAccount.name,
-            username: newAccount.username,
-            accountNumber:
-                newAccount.accountNumber,
-            balance:
-                newAccount.balance,
-            status:
-                newAccount.status
         }
 
-    });
-
-});
+    }
+);
 
 
 // ==========================================
 // TOP UP DEMO ACCOUNT
 // ==========================================
 
-app.post("/api/admin/topup", (req, res) => {
+app.post(
+    "/api/admin/topup",
+    async (req, res) => {
 
-    const {
-        accountId,
-        amount
-    } = req.body;
+        try {
 
-    const topUpAmount =
-        Number(amount);
+            const {
+                accountId,
+                amount
+            } = req.body;
 
+            const topUpAmount =
+                Number(amount);
 
-    if (
-        !accountId ||
-        !topUpAmount ||
-        topUpAmount <= 0
-    ) {
+            if (
+                !accountId ||
+                !Number.isFinite(topUpAmount) ||
+                topUpAmount <= 0
+            ) {
 
-        return res.status(400).json({
-            success: false,
-            message: "Enter a valid top-up amount."
-        });
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Enter a valid top-up amount."
+                });
 
-    }
-
-
-    const data = readData();
-
-
-    const account =
-        data.accounts.find(
-            function (item) {
-                return item.id === accountId;
             }
-        );
 
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
 
-    if (!account) {
+            if (!account) {
 
-        return res.status(404).json({
-            success: false,
-            message: "Account not found."
-        });
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            const transaction = {
+
+                type:
+                    "Admin Top Up",
+
+                description:
+                    "Demo Account Top Up",
+
+                recipient:
+                    account.name,
+
+                amount:
+                    topUpAmount,
+
+                status:
+                    "Successful",
+
+                reference:
+                    generateReference("TOP"),
+
+                date:
+                    new Date().toLocaleString()
+
+            };
+
+            const currentBalance =
+                Number(account.balance) || 0;
+
+            const newBalance =
+                currentBalance +
+                topUpAmount;
+
+            await accountsCollection.updateOne(
+
+                { id: accountId },
+
+                {
+                    $set: {
+                        balance:
+                            newBalance
+                    },
+
+                    $push: {
+                        transactions: {
+                            $each: [transaction],
+                            $position: 0
+                        }
+                    }
+                }
+
+            );
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Demo account topped up successfully.",
+
+                balance:
+                    newBalance,
+
+                transaction:
+                    transaction
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Top up error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to top up account."
+            });
+
+        }
 
     }
-
-
-    account.balance =
-        Number(account.balance) +
-        topUpAmount;
-
-
-    if (!Array.isArray(account.transactions)) {
-        account.transactions = [];
-    }
-
-
-    const transaction = {
-
-        type:
-            "Admin Top Up",
-
-        description:
-            "Demo Account Top Up",
-
-        recipient:
-            account.name,
-
-        amount:
-            topUpAmount,
-
-        status:
-            "Successful",
-
-        reference:
-            "TOP-" +
-            Math.floor(
-                100000 +
-                Math.random() * 900000
-            ),
-
-        date:
-            new Date().toLocaleString()
-
-    };
-
-
-    account.transactions.unshift(
-        transaction
-    );
-
-
-    saveData(data);
-
-
-    res.json({
-
-        success: true,
-
-        message:
-            "Demo account topped up successfully.",
-
-        balance:
-            account.balance,
-
-        transaction:
-            transaction
-
-    });
-
-});
+);
 
 
 // ==========================================
 // BLOCK / UNBLOCK ACCOUNT
 // ==========================================
 
-app.post("/api/admin/accounts/status", (req, res) => {
+app.post(
+    "/api/admin/accounts/status",
+    async (req, res) => {
 
-    const {
-        accountId,
-        status
-    } = req.body;
+        try {
 
+            const {
+                accountId,
+                status
+            } = req.body;
 
-    if (
-        !accountId ||
-        !["active", "blocked"].includes(status)
-    ) {
+            if (
+                !accountId ||
+                !["active", "blocked"]
+                    .includes(status)
+            ) {
 
-        return res.status(400).json({
-            success: false,
-            message: "Invalid account status."
-        });
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid account status."
+                });
 
-    }
-
-
-    const data = readData();
-
-
-    const account =
-        data.accounts.find(
-            function (item) {
-                return item.id === accountId;
             }
-        );
 
+            const result =
+                await accountsCollection.updateOne(
 
-    if (!account) {
+                    { id: accountId },
 
-        return res.status(404).json({
-            success: false,
-            message: "Account not found."
-        });
+                    {
+                        $set: {
+                            status:
+                                status
+                        }
+                    }
+
+                );
+
+            if (result.matchedCount === 0) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                message:
+                    status === "blocked"
+                        ? "Demo account blocked."
+                        : "Demo account unblocked.",
+
+                status:
+                    status
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Status update error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to update account status."
+            });
+
+        }
 
     }
+);
 
-
-    account.status =
-        status;
-
-
-    saveData(data);
-
-
-    res.json({
-
-        success: true,
-
-        message:
-            status === "blocked"
-                ? "Demo account blocked."
-                : "Demo account unblocked.",
-
-        status:
-            account.status
-
-    });
-
-});
 
 // ==========================================
 // DELETE CUSTOMER ACCOUNT
@@ -529,65 +630,36 @@ app.delete(
 
         try {
 
-            const accountId = req.params.id;
+            const accountId =
+                req.params.id;
 
-            const data = readData();
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
 
-            const accountIndex =
-                data.accounts.findIndex(
-                    function (item) {
-                        return item.id === accountId;
-                    }
-                );
-
-            if (accountIndex === -1) {
+            if (!account) {
 
                 return res.status(404).json({
                     success: false,
-                    message: "Account not found."
+                    message:
+                        "Account not found."
                 });
 
             }
 
-            const deletedAccount =
-                data.accounts[accountIndex];
-
-
-            // Save deleted account permanently in MongoDB
-            await mongoClient
-                .db("trustbank")
-                .collection("deleted_accounts")
-                .updateOne(
-                    { id: deletedAccount.id },
-                    {
-                        $set: {
-                            ...deletedAccount,
-                            deletedAt: new Date()
-                        }
-                    },
-                    { upsert: true }
-                );
-
-
-            // Remove account from data.json
-            data.accounts.splice(
-                accountIndex,
-                1
-            );
-
-
-            saveData(data);
-
+            await accountsCollection.deleteOne({
+                id: accountId
+            });
 
             res.json({
 
                 success: true,
 
                 message:
-                    `${deletedAccount.name}'s account has been deleted successfully.`
+                    `${account.name}'s account has been deleted successfully.`
 
             });
-
 
         } catch (error) {
 
@@ -596,14 +668,10 @@ app.delete(
                 error
             );
 
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Unable to delete account."
-
             });
 
         }
@@ -611,43 +679,52 @@ app.delete(
     }
 );
 
+
 // ==========================================
 // ACCOUNT DETAILS
 // ==========================================
 
 app.get(
     "/api/admin/accounts/:id",
-    (req, res) => {
+    async (req, res) => {
 
-        const data = readData();
+        try {
 
+            const account =
+                await accountsCollection.findOne({
+                    id: req.params.id
+                });
 
-        const account =
-            data.accounts.find(
-                function (item) {
-                    return item.id === req.params.id;
-                }
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            res.json({
+                success: true,
+                account:
+                    cleanAccount(account)
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Account details error:",
+                error
             );
 
-
-        if (!account) {
-
-            return res.status(404).json({
+            res.status(500).json({
                 success: false,
-                message: "Account not found."
+                message:
+                    "Unable to load account."
             });
 
         }
-
-
-        res.json({
-
-            success: true,
-
-            account:
-                account
-
-        });
 
     }
 );
@@ -659,54 +736,48 @@ app.get(
 
 app.get(
     "/api/account/:id",
-    (req, res) => {
+    async (req, res) => {
 
-        const data = readData();
+        try {
 
+            const account =
+                await accountsCollection.findOne({
+                    id: req.params.id
+                });
 
-        const account =
-            data.accounts.find(
-                function (item) {
-                    return item.id === req.params.id;
-                }
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                account:
+                    publicAccount(account)
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Customer account error:",
+                error
             );
 
-
-        if (!account) {
-
-            return res.status(404).json({
+            res.status(500).json({
                 success: false,
-                message: "Account not found."
+                message:
+                    "Unable to load account."
             });
 
         }
-
-
-        res.json({
-
-            success: true,
-
-            account: {
-                id:
-                    account.id,
-
-                name:
-                    account.name,
-
-                username:
-                    account.username,
-
-                accountNumber:
-                    account.accountNumber,
-
-                balance:
-                    account.balance,
-
-                status:
-                    account.status
-            }
-
-        });
 
     }
 );
@@ -718,37 +789,52 @@ app.get(
 
 app.get(
     "/api/transactions/:id",
-    (req, res) => {
+    async (req, res) => {
 
-        const data = readData();
+        try {
 
+            const account =
+                await accountsCollection.findOne({
+                    id: req.params.id
+                });
 
-        const account =
-            data.accounts.find(
-                function (item) {
-                    return item.id === req.params.id;
-                }
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                transactions:
+                    Array.isArray(
+                        account.transactions
+                    )
+                        ? account.transactions
+                        : []
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Transactions error:",
+                error
             );
 
-
-        if (!account) {
-
-            return res.status(404).json({
+            res.status(500).json({
                 success: false,
-                message: "Account not found."
+                message:
+                    "Unable to load transactions."
             });
 
         }
-
-
-        res.json({
-
-            success: true,
-
-            transactions:
-                account.transactions || []
-
-        });
 
     }
 );
@@ -758,188 +844,173 @@ app.get(
 // CUSTOMER TRANSFER
 // ==========================================
 
-app.post("/api/transfer", (req, res) => {
+app.post(
+    "/api/transfer",
+    async (req, res) => {
 
-    try {
+        try {
 
-        const {
-            accountId,
-            amount,
-            recipient,
-            reference
-        } = req.body;
+            const {
+                accountId,
+                amount,
+                recipient,
+                reference
+            } = req.body;
 
+            const transferAmount =
+                Number(amount);
 
-        const transferAmount =
-            Number(amount);
+            if (
+                !accountId ||
+                !recipient ||
+                !Number.isFinite(
+                    transferAmount
+                ) ||
+                transferAmount <= 0
+            ) {
 
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid transfer details."
+                });
 
-        if (
-            !accountId ||
-            !recipient ||
-            !transferAmount ||
-            transferAmount <= 0
-        ) {
+            }
 
-            return res.status(400).json({
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
 
-                success: false,
+            if (!account) {
 
-                message:
-                    "Invalid transfer details."
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
 
-            });
+            }
 
-        }
+            if (
+                account.status === "blocked"
+            ) {
 
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        "This account is blocked."
+                });
 
-        const data = readData();
+            }
 
+            const currentBalance =
+                Number(account.balance) || 0;
 
-        const account =
-            data.accounts.find(
-                function (item) {
-                    return item.id === accountId;
+            if (
+                transferAmount >
+                currentBalance
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Insufficient balance."
+                });
+
+            }
+
+            const newBalance =
+                currentBalance -
+                transferAmount;
+
+            const transaction = {
+
+                type:
+                    "Transfer",
+
+                description:
+                    "Money Transfer",
+
+                recipient:
+                    recipient,
+
+                amount:
+                    transferAmount,
+
+                status:
+                    "Successful",
+
+                reference:
+                    reference ||
+                    generateReference("TB"),
+
+                date:
+                    new Date().toLocaleString()
+
+            };
+
+            await accountsCollection.updateOne(
+
+                {
+                    id: accountId,
+
+                    balance: {
+                        $gte:
+                            transferAmount
+                    }
+                },
+
+                {
+                    $set: {
+                        balance:
+                            newBalance
+                    },
+
+                    $push: {
+                        transactions: {
+                            $each: [transaction],
+                            $position: 0
+                        }
+                    }
+
                 }
+
             );
 
+            res.json({
 
-        if (!account) {
-
-            return res.status(404).json({
-
-                success: false,
+                success: true,
 
                 message:
-                    "Account not found."
+                    "Transfer successful",
+
+                balance:
+                    newBalance,
+
+                transaction:
+                    transaction
 
             });
 
-        }
+        } catch (error) {
 
+            console.error(
+                "Transfer error:",
+                error
+            );
 
-        if (account.status === "blocked") {
-
-            return res.status(403).json({
-
+            res.status(500).json({
                 success: false,
-
                 message:
-                    "This account is blocked."
-
+                    "Unable to process transfer."
             });
 
         }
-
-
-        const currentBalance =
-            Number(account.balance);
-
-
-        if (
-            transferAmount >
-            currentBalance
-        ) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "Insufficient balance."
-
-            });
-
-        }
-
-
-        account.balance =
-            currentBalance -
-            transferAmount;
-
-
-        if (!Array.isArray(account.transactions)) {
-            account.transactions = [];
-        }
-
-
-        const transaction = {
-
-            type:
-                "Transfer",
-
-            description:
-                "Money Transfer",
-
-            recipient:
-                recipient,
-
-            amount:
-                transferAmount,
-
-            status:
-                "Successful",
-
-            reference:
-                reference ||
-                "TB-" +
-                Math.floor(
-                    100000 +
-                    Math.random() * 900000
-                ),
-
-            date:
-                new Date().toLocaleString()
-
-        };
-
-
-        account.transactions.unshift(
-            transaction
-        );
-
-
-        saveData(data);
-
-
-        res.json({
-
-            success:
-                true,
-
-            message:
-                "Transfer successful",
-
-            balance:
-                account.balance,
-
-            transaction:
-                transaction
-
-        });
-
-
-    } catch (error) {
-
-        console.error(
-            "Transfer error:",
-            error
-        );
-
-
-        res.status(500).json({
-
-            success:
-                false,
-
-            message:
-                "Unable to process transfer."
-
-        });
 
     }
+);
 
-});
 
 // ==========================================
 // ADMIN BALANCE ADJUSTMENT
@@ -947,11 +1018,12 @@ app.post("/api/transfer", (req, res) => {
 
 app.post(
     "/api/admin/accounts/:id/balance",
-    (req, res) => {
+    async (req, res) => {
 
         try {
 
-            const accountId = req.params.id;
+            const accountId =
+                req.params.id;
 
             const {
                 action,
@@ -959,12 +1031,8 @@ app.post(
                 reason
             } = req.body;
 
-            const adjustmentAmount = Number(amount);
-
-
-            // ======================================
-            // VALIDATE ACTION
-            // ======================================
+            const adjustmentAmount =
+                Number(amount);
 
             if (
                 action !== "topup" &&
@@ -973,116 +1041,68 @@ app.post(
 
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid balance action."
+                    message:
+                        "Invalid balance action."
                 });
 
             }
 
-
-            // ======================================
-            // VALIDATE AMOUNT
-            // ======================================
-
             if (
-                !Number.isFinite(adjustmentAmount) ||
+                !Number.isFinite(
+                    adjustmentAmount
+                ) ||
                 adjustmentAmount <= 0
             ) {
 
                 return res.status(400).json({
                     success: false,
-                    message: "Enter a valid amount."
+                    message:
+                        "Enter a valid amount."
                 });
 
             }
 
-
-            const data = readData();
-
-
-            // ======================================
-            // FIND ACCOUNT
-            // ======================================
-
             const account =
-                data.accounts.find(
-                    function (item) {
-                        return item.id === accountId;
-                    }
-                );
-
+                await accountsCollection.findOne({
+                    id: accountId
+                });
 
             if (!account) {
 
                 return res.status(404).json({
                     success: false,
-                    message: "Account not found."
+                    message:
+                        "Account not found."
                 });
 
             }
 
-
-            // ======================================
-            // CURRENT BALANCE
-            // ======================================
-
             const oldBalance =
                 Number(account.balance) || 0;
 
-
-            // ======================================
-            // TOP UP
-            // ======================================
-
-            if (action === "topup") {
-
-                account.balance =
-                    oldBalance +
-                    adjustmentAmount;
-
-            }
-
-
-            // ======================================
-            // DEDUCT
-            // ======================================
-
-            if (action === "deduct") {
-
-                if (
-                    adjustmentAmount >
+            if (
+                action === "deduct" &&
+                adjustmentAmount >
                     oldBalance
-                ) {
+            ) {
 
-                    return res.status(400).json({
-                        success: false,
-                        message:
-                            "Cannot deduct more than the account balance."
-                    });
-
-                }
-
-
-                account.balance =
-                    oldBalance -
-                    adjustmentAmount;
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Cannot deduct more than the account balance."
+                });
 
             }
 
-
-            // ======================================
-            // TRANSACTIONS
-            // ======================================
-
-            if (!Array.isArray(account.transactions)) {
-
-                account.transactions = [];
-
-            }
-
+            const newBalance =
+                action === "topup"
+                    ? oldBalance +
+                      adjustmentAmount
+                    : oldBalance -
+                      adjustmentAmount;
 
             const isTopUp =
                 action === "topup";
-
 
             const transaction = {
 
@@ -1109,33 +1129,32 @@ app.post(
                     "Successful",
 
                 reference:
-                    "ADM-" +
-                    Math.floor(
-                        100000 +
-                        Math.random() * 900000
-                    ),
+                    generateReference("ADM"),
 
                 date:
                     new Date().toLocaleString()
 
             };
 
+            await accountsCollection.updateOne(
 
-            account.transactions.unshift(
-                transaction
+                { id: accountId },
+
+                {
+                    $set: {
+                        balance:
+                            newBalance
+                    },
+
+                    $push: {
+                        transactions: {
+                            $each: [transaction],
+                            $position: 0
+                        }
+                    }
+                }
+
             );
-
-
-            // ======================================
-            // SAVE
-            // ======================================
-
-            saveData(data);
-
-
-            // ======================================
-            // RESPONSE
-            // ======================================
 
             res.json({
 
@@ -1147,13 +1166,12 @@ app.post(
                         : "Account balance reduced successfully.",
 
                 balance:
-                    account.balance,
+                    newBalance,
 
                 transaction:
                     transaction
 
             });
-
 
         } catch (error) {
 
@@ -1162,14 +1180,10 @@ app.post(
                 error
             );
 
-
             res.status(500).json({
-
                 success: false,
-
                 message:
                     "Unable to update account balance."
-
             });
 
         }
@@ -1177,71 +1191,131 @@ app.post(
     }
 );
 
+
+// ==========================================
+// IMPORT EXISTING DATA.JSON
+// ==========================================
+// This runs only when MongoDB has no accounts.
+// It allows your existing demo accounts to
+// appear in MongoDB the first time.
+
+async function importExistingAccounts() {
+
+    const existingCount =
+        await accountsCollection.countDocuments();
+
+    if (existingCount > 0) {
+        console.log(
+            `MongoDB already contains ${existingCount} account(s).`
+        );
+        return;
+    }
+
+    const data = readData();
+
+    if (
+        !data ||
+        !Array.isArray(data.accounts) ||
+        data.accounts.length === 0
+    ) {
+
+        console.log(
+            "No accounts found in data.json to import."
+        );
+
+        return;
+    }
+
+    const accounts =
+        data.accounts.map(account => ({
+            ...account,
+            balance:
+                Number(account.balance) || 0,
+            status:
+                account.status || "active",
+            transactions:
+                Array.isArray(
+                    account.transactions
+                )
+                    ? account.transactions
+                    : [],
+            importedAt:
+                new Date()
+        }));
+
+    await accountsCollection.insertMany(
+        accounts
+    );
+
+    console.log(
+        `Imported ${accounts.length} account(s) from data.json into MongoDB.`
+    );
+
+}
+
+
 // ==========================================
 // START SERVER
 // ==========================================
-mongoClient.connect()
-  .then(async () => {
 
-    console.log("MongoDB connected successfully");
+async function startServer() {
 
-    const deletedAccounts =
-      await deletedAccountsCollection
-        .find({})
-        .toArray();
+    try {
 
-    if (deletedAccounts.length > 0) {
-
-      const data = readData();
-
-      const deletedIds =
-        new Set(
-          deletedAccounts.map(
-            account => account.id
-          )
-        );
-
-      const originalCount =
-        data.accounts.length;
-
-      data.accounts =
-        data.accounts.filter(
-          account =>
-            !deletedIds.has(account.id)
-        );
-
-      if (
-        data.accounts.length !==
-        originalCount
-      ) {
-
-        saveData(data);
+        await mongoClient.connect();
 
         console.log(
-          `Removed ${originalCount - data.accounts.length} deleted account(s) from data.json`
+            "MongoDB connected successfully"
         );
 
-      }
+        db =
+            mongoClient.db("trustbank");
+
+        accountsCollection =
+            db.collection("accounts");
+
+        await accountsCollection.createIndex(
+            { id: 1 },
+            { unique: true }
+        );
+
+        await accountsCollection.createIndex(
+            { username: 1 },
+            { unique: true }
+        );
+
+        await accountsCollection.createIndex(
+            { accountNumber: 1 },
+            { unique: true }
+        );
+
+        await importExistingAccounts();
+
+        app.listen(
+            PORT,
+            "0.0.0.0",
+            () => {
+
+                console.log(
+                    `Trust Bank server running on port ${PORT}`
+                );
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "MongoDB connection failed:",
+            error
+        );
+
+        process.exit(1);
 
     }
- 
-    app.listen(PORT, "0.0.0.0", () => {
 
-      console.log(
-        `Trust Bank server running on port ${PORT}`
-      );
+}
 
-    });
-
-  })
-  .catch((error) => {
-
-    console.error(
-      "MongoDB connection failed:",
-      error
-    );
-
-  });
-
+startServer();
 
 module.exports = app;
