@@ -1040,13 +1040,44 @@ async function viewTransactions(
                                 </p>
 
                                 <small>
-                                    ${escapeHtml(
-                                        transaction.date ||
-                                        ""
-                                    )}
-                                </small>
+                                     ${escapeHtml(
+                                             transaction.date ||
+                                             ""
+                                     )}
+                                 </small>
 
-                                <hr>
+                                 ${
+                                     transaction.type === "Deposit" &&
+                                     transaction.status === "Pending"
+
+                                     ?
+
+                                     `<button
+                                         class="green"
+                                         onclick="approveDeposit(
+                                             '${escapeHtml(accountId)}',
+                                             '${escapeHtml(transaction.reference)}'
+                                         )"
+                                     >
+                                         Approve Deposit
+                                     </button>`
+
+                                     :
+
+                                     ""
+                                 }
+
+                                 <p>
+                                     Status:
+                                     <strong>
+                                         ${escapeHtml(
+                                             transaction.status ||
+                                              "Completed"
+                                         )}
+                                     </strong>
+                                 </p>
+
+                                 <hr>
 
                             </div>
 
@@ -1073,6 +1104,88 @@ async function viewTransactions(
     }
 
 }
+
+// ==========================================
+// APPROVE DEPOSIT
+// ==========================================
+
+async function approveDeposit(
+    accountId,
+    reference
+) {
+
+    const confirmed =
+        confirm(
+            "Approve this deposit?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/admin/deposits/approve",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            accountId:
+                                accountId,
+
+                            reference:
+                                reference
+
+                        })
+
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                result.message ||
+                "Unable to approve deposit."
+            );
+
+            return;
+        }
+
+        alert(
+            result.message ||
+            "Deposit approved successfully."
+        );
+
+        loadAccounts();
+
+    } catch (error) {
+
+        console.error(
+            "Approve deposit error:",
+            error
+        );
+
+        alert(
+            "Unable to connect to the server."
+        );
+
+    }
+
+}
+
 
 // ==========================================
 // DELETE ACCOUNT
