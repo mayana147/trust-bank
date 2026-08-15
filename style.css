@@ -2991,3 +2991,1049 @@ header nav a:hover {
     }
 
 }
+
+/* =========================================================
+   TRUST BANK — COMPLETE PREMIUM DASHBOARD DESIGN
+   ========================================================= */
+
+/* ---------- Dashboard background ---------- */
+
+body {
+    background: #f4f7fb;
+}
+
+.dashboard {
+    width: min(92%, 1100px);
+    max-width: 1100px;
+    margin: 35px auto 70px;
+}
+
+/* ---------- Bank header ---------- */
+
+.bank-header {
+    min-height: 72px;
+    padding: 14px 5%;
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid #e5eaf1;
+    box-shadow: 0 4px 20px rgba(18, 60, 115, 0.06);
+}
+
+.bank-logo {
+    color: #123c73;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+
+.bank-nav {
+    gap: 8px;
+}
+
+.bank-nav button {
+    padding: 9px 14px;
+    border: 1px solid #dce5ef;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #40516a;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+.bank-nav button:hover {
+    background: #edf5ff;
+    color: #123c73;
+    border-color: #bcd3eb;
+}
+
+/* ---------- Welcome ---------- */
+
+.dashboard-welcome {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.dashboard-label {
+    margin: 0 0 6px;
+    color: #5d7da3;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.dashboard-welcome h1 {
+    margin: 0;
+    color: #15243b;
+    font-size: clamp(26px, 4vw, 36px);
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.dashboard-subtitle {
+    margin: 7px 0 0;
+    color: #7b8899;
+    font-size: 14px;
+}
+
+/* =========================================================
+   BALANCE CARD
+   ========================================================= */
+
+.balance-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 225px;
+    margin: 0 0 24px;
+    padding: 30px 32px;
+    border: none;
+    border-radius: 26px;
+
+    background:
+        radial-gradient(
+            circle at 88% 15%,
+            rgba(255,255,255,0.18),
+            transparent 27%
+        ),
+        radial-gradient(
+            circle at 10% 100%,
+            rgba(255,255,255,0.08),
+            transparent 30%
+        ),
+        linear-gradient(
+            135deg,
+            #0b315e 0%,
+            #145da5 55%,
+            #2585d7 100%
+        );
+
+    box-shadow:
+        0 22px 50px rgba(18, 60, 115, 0.22);
+
+    color: #ffffff;
+}
+
+.balance-card::before {
+    width: 310px;
+    height: 310px;
+    right: -110px;
+    top: -180px;
+    background: rgba(255,255,255,0.08);
+}
+
+.balance-card::after {
+    width: 210px;
+    height: 210px;
+    left: -110px;
+    bottom: -155px;
+    background: rgba(255,255,255,0.06);
+}
+
+.balance-top {
+    position: relative;
+    z-index: 3;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.balance-top span {
+    color: rgba(255,255,255,0.72);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.balance-eye {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 50%;
+
+    background: rgba(255,255,255,0.10);
+    color: #ffffff;
+
+    font-size: 16px;
+}
+
+.balance-eye:hover {
+    background: rgba(255,255,255,0.18);
+}
+
+.balance-card h1 {
+    position: relative;
+    z-index: 3;
+
+    margin: 17px 0 25px;
+
+    color: #ffffff;
+    font-size: clamp(32px, 6vw, 46px);
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.balance-account {
+    position: relative;
+    z-index: 3;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    max-width: 240px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid rgba(255,255,255,0.18);
+}
+
+.balance-account span {
+    color: rgba(255,255,255,0.60);
+    font-size: 12px;
+}
+
+.balance-account strong {
+    color: #ffffff;
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+/* =========================================================
+   QUICK ACTIONS
+   ========================================================= */
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 30px;
+}
+
+.quick-action {
+    min-height: 105px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    padding: 15px;
+
+    border: 1px solid #e0e7ef;
+    border-radius: 18px;
+
+    background: #ffffff;
+    color: #17324d;
+
+    font-size: 14px;
+    font-weight: 750;
+
+    box-shadow:
+        0 7px 20px rgba(18,60,115,0.06);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.quick-action:hover {
+    transform: translateY(-4px);
+
+    border-color: #b9d2ec;
+
+    box-shadow:
+        0 15px 30px rgba(18,60,115,0.11);
+}
+
+.quick-icon {
+    width: 43px;
+    height: 43px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: #edf5ff;
+    color: #1769b7;
+
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.transfer-action {
+    background:
+        linear-gradient(
+            135deg,
+            #123c73,
+            #1769b7
+        );
+
+    border-color: transparent;
+    color: #ffffff;
+
+    box-shadow:
+        0 12px 25px rgba(18,60,115,0.20);
+}
+
+.transfer-action .quick-icon {
+    background: rgba(255,255,255,0.15);
+    color: #ffffff;
+}
+
+.transfer-action:hover {
+    background:
+        linear-gradient(
+            135deg,
+            #0d315e,
+            #155b9f
+        );
+}
+
+/* =========================================================
+   SECTIONS
+   ========================================================= */
+
+.dashboard-section {
+    margin-top: 28px;
+    padding: 26px;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+
+    box-shadow:
+        0 8px 25px rgba(18,60,115,0.05);
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 15px;
+
+    margin-bottom: 22px;
+}
+
+.section-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #7890aa;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.section-heading h2 {
+    margin: 0;
+
+    color: #15243b;
+
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+.text-button {
+    flex-shrink: 0;
+
+    padding: 9px 14px;
+
+    border: 1px solid #dbe4ed;
+    border-radius: 10px;
+
+    background: #f7faff;
+    color: #1769b7;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    transition: 0.2s ease;
+}
+
+.text-button:hover {
+    background: #edf5ff;
+    border-color: #b9d2ec;
+}
+
+/* =========================================================
+   PREMIUM VIRTUAL CARD
+   ========================================================= */
+
+.dashboard-virtual-card {
+    position: relative;
+    overflow: hidden;
+
+    width: 100%;
+    max-width: 500px;
+    min-height: 275px;
+
+    margin: 0 auto;
+
+    padding: 28px;
+
+    border-radius: 24px;
+
+    background:
+        radial-gradient(
+            circle at 88% 20%,
+            rgba(255,255,255,0.18),
+            transparent 25%
+        ),
+        radial-gradient(
+            circle at 10% 90%,
+            rgba(255,255,255,0.08),
+            transparent 30%
+        ),
+        linear-gradient(
+            135deg,
+            #0b315e,
+            #1765b4 58%,
+            #2585d7
+        );
+
+    color: #ffffff;
+
+    box-shadow:
+        0 22px 45px rgba(18,60,115,0.22);
+}
+
+.dashboard-virtual-card::before {
+    content: "";
+
+    position: absolute;
+
+    width: 250px;
+    height: 250px;
+
+    right: -100px;
+    bottom: -150px;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow:
+        0 0 0 35px rgba(255,255,255,0.025),
+        0 0 0 70px rgba(255,255,255,0.018);
+}
+
+.virtual-card-top {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.virtual-card-top strong {
+    font-size: 18px;
+    letter-spacing: 0.5px;
+}
+
+.virtual-card-top span {
+    padding: 5px 9px;
+
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 7px;
+
+    background: rgba(255,255,255,0.08);
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.virtual-card-chip {
+    position: relative;
+    z-index: 2;
+
+    width: 49px;
+    height: 37px;
+
+    margin-top: 30px;
+
+    border-radius: 8px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #d5bf79,
+            #f2dda0
+        );
+
+    box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.6);
+}
+
+.virtual-card-number {
+    position: relative;
+    z-index: 2;
+
+    margin-top: 23px;
+
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 3px;
+}
+
+.virtual-card-bottom {
+    position: absolute;
+    z-index: 2;
+
+    left: 28px;
+    right: 28px;
+    bottom: 42px;
+
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.virtual-card-bottom div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.virtual-card-bottom small {
+    color: rgba(255,255,255,0.58);
+
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.virtual-card-bottom strong {
+    color: #ffffff;
+
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.virtual-card-status {
+    position: absolute;
+    z-index: 3;
+
+    right: 28px;
+    bottom: 18px;
+}
+
+.virtual-card-status span {
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.card-status-active {
+    color: #9ce7bd;
+}
+
+.card-status-frozen {
+    color: #ffd2d2;
+}
+
+/* =========================================================
+   TRANSACTIONS
+   ========================================================= */
+
+.dashboard-transactions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dashboard-transaction {
+    display: grid;
+
+    grid-template-columns: 46px 1fr auto;
+
+    align-items: center;
+
+    gap: 13px;
+
+    padding: 15px;
+
+    border: 1px solid #e9eef4;
+    border-radius: 15px;
+
+    background: #fbfcfe;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.dashboard-transaction:hover {
+    transform: translateY(-2px);
+
+    background: #ffffff;
+
+    box-shadow:
+        0 8px 20px rgba(18,60,115,0.07);
+}
+
+.transaction-icon {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.debit-icon {
+    background: #fff1ef;
+    color: #c0392b;
+}
+
+.credit-icon {
+    background: #eaf8f0;
+    color: #23804b;
+}
+
+.transaction-main {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.transaction-main strong {
+    overflow: hidden;
+
+    color: #172b45;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.transaction-main span {
+    overflow: hidden;
+
+    color: #718096;
+
+    font-size: 11px;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.transaction-main small {
+    color: #9aa6b5;
+    font-size: 10px;
+}
+
+.transaction-amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+
+    white-space: nowrap;
+}
+
+.transaction-amount strong {
+    font-size: 13px;
+}
+
+.transaction-credit {
+    color: #21834e;
+}
+
+.transaction-debit {
+    color: #b42318;
+}
+
+.transaction-amount span {
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.status-success {
+    color: #2b8a57;
+}
+
+.status-other {
+    color: #8a6a21;
+}
+
+.empty-transactions {
+    padding: 35px 20px;
+
+    border: 1px dashed #d8e1eb;
+    border-radius: 15px;
+
+    background: #fafcff;
+
+    text-align: center;
+}
+
+.empty-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.empty-transactions p {
+    margin: 0 0 5px;
+
+    color: #253852;
+
+    font-weight: 700;
+}
+
+.empty-transactions span {
+    color: #8a97a8;
+    font-size: 12px;
+}
+
+/* =========================================================
+   ACCOUNT SUMMARY
+   ========================================================= */
+
+.dashboard-account-summary {
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 0;
+
+    margin-top: 28px;
+
+    padding: 0;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 8px 25px rgba(18,60,115,0.05);
+}
+
+.dashboard-account-summary > div {
+    padding: 22px;
+
+    border-right: 1px solid #edf1f5;
+}
+
+.dashboard-account-summary > div:last-child {
+    border-right: none;
+}
+
+.dashboard-account-summary span {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #8a97a8;
+
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.dashboard-account-summary strong {
+    display: block;
+
+    overflow: hidden;
+
+    color: #243750;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dashboard-account-summary .account-active {
+    color: #25804c;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.bank-footer {
+    margin-top: 60px;
+
+    padding: 28px 20px;
+
+    background: #102b4e;
+
+    color: #ffffff;
+
+    text-align: center;
+}
+
+.bank-footer p {
+    margin: 4px 0;
+
+    color: #b8c5d6;
+    font-size: 12px;
+}
+
+/* =========================================================
+   TABLETS
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-account-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-account-summary > div:nth-child(2) {
+        border-right: none;
+    }
+
+    .dashboard-account-summary > div:nth-child(-n+2) {
+        border-bottom: 1px solid #edf1f5;
+    }
+
+}
+
+/* =========================================================
+   PHONES
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .bank-header {
+        padding: 15px 16px;
+    }
+
+    .bank-logo {
+        font-size: 21px;
+    }
+
+    .bank-nav {
+        width: 100%;
+        gap: 6px;
+    }
+
+    .bank-nav button {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 5px;
+        font-size: 11px;
+    }
+
+    .dashboard {
+        width: calc(100% - 24px);
+        margin: 25px auto 50px;
+    }
+
+    .dashboard-welcome {
+        margin-bottom: 18px;
+    }
+
+    .dashboard-welcome h1 {
+        font-size: 25px;
+        line-height: 1.15;
+    }
+
+    .dashboard-subtitle {
+        font-size: 13px;
+    }
+
+    .balance-card {
+        min-height: 190px;
+        padding: 24px 22px;
+        border-radius: 21px;
+    }
+
+    .balance-card h1 {
+        margin: 15px 0 22px;
+        font-size: 31px;
+    }
+
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .quick-action {
+        min-height: 90px;
+        border-radius: 15px;
+        font-size: 13px;
+    }
+
+    .quick-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
+    }
+
+    .dashboard-section {
+        margin-top: 20px;
+        padding: 18px 14px;
+        border-radius: 18px;
+    }
+
+    .section-heading {
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .section-heading h2 {
+        font-size: 21px;
+    }
+
+    .section-label {
+        font-size: 9px;
+    }
+
+    .text-button {
+        padding: 8px 11px;
+        font-size: 11px;
+    }
+
+    .dashboard-virtual-card {
+        min-height: 220px;
+        padding: 22px;
+        border-radius: 19px;
+    }
+
+    .virtual-card-top strong {
+        font-size: 16px;
+    }
+
+    .virtual-card-chip {
+        width: 43px;
+        height: 32px;
+        margin-top: 22px;
+    }
+
+    .virtual-card-number {
+        margin-top: 19px;
+        font-size: 15px;
+        letter-spacing: 2px;
+    }
+
+    .virtual-card-bottom {
+        left: 22px;
+        right: 22px;
+        bottom: 38px;
+    }
+
+    .virtual-card-bottom strong {
+        font-size: 10px;
+    }
+
+    .dashboard-transaction {
+        grid-template-columns: 39px minmax(0, 1fr) auto;
+        gap: 9px;
+        padding: 12px 9px;
+        border-radius: 13px;
+    }
+
+    .transaction-icon {
+        width: 39px;
+        height: 39px;
+        border-radius: 11px;
+        font-size: 16px;
+    }
+
+    .transaction-main strong {
+        font-size: 12px;
+    }
+
+    .transaction-main span {
+        font-size: 10px;
+    }
+
+    .transaction-main small {
+        font-size: 9px;
+    }
+
+    .transaction-amount strong {
+        font-size: 11px;
+    }
+
+    .transaction-amount span {
+        font-size: 9px;
+    }
+
+    .dashboard-account-summary {
+        grid-template-columns: 1fr;
+        border-radius: 17px;
+    }
+
+    .dashboard-account-summary > div {
+        padding: 17px;
+        border-right: none;
+        border-bottom: 1px solid #edf1f5;
+    }
+
+    .dashboard-account-summary > div:last-child {
+        border-bottom: none;
+    }
+
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+    .dashboard {
+        width: calc(100% - 18px);
+    }
+
+    .bank-nav button {
+        font-size: 10px;
+    }
+
+    .balance-card {
+        padding: 21px 18px;
+    }
+
+    .balance-card h1 {
+        font-size: 28px;
+    }
+
+    .dashboard-virtual-card {
+        min-height: 205px;
+        padding: 19px;
+    }
+
+    .virtual-card-number {
+        font-size: 13px;
+    }
+
+    .dashboard-transaction {
+        grid-template-columns: 35px minmax(0, 1fr) auto;
+    }
+
+    .transaction-icon {
+        width: 35px;
+        height: 35px;
+    }
+
+}
