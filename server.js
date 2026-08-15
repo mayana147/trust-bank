@@ -272,6 +272,174 @@ app.get(
     }
 );
 
+// ==========================================
+// APPROVE DEPOSIT
+// ==========================================
+
+app.post(
+    "/api/admin/deposits/approve",
+    async (req, res) => {
+
+        try {
+
+            const {
+                accountId,
+                reference
+            } = req.body;
+
+            if (!accountId || !reference) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Account ID and transaction reference are required."
+                });
+
+            }
+
+            const account =
+                await accountsCollection.findOne({
+                    id: accountId
+                });
+
+            if (!account) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Account not found."
+                });
+
+            }
+
+            const transactions =
+                Array.isArray(account.transactions)
+                    ? account.transactions
+                    : [];
+
+            const transaction =
+                transactions.find(
+                    item =>
+                        item.reference === reference &&
+                        item.type === "Deposit"
+                );
+
+            if (!transaction) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Deposit transaction not found."
+                });
+
+            }
+
+            if (transaction.status === "Approved") {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "This deposit has already been approved."
+                });
+
+            }
+
+            if (transaction.status !== "Pending") {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Only pending deposits can be approved."
+                });
+
+            }
+
+            const depositAmount =
+                Number(transaction.amount);
+
+            if (
+                !Number.isFinite(depositAmount) ||
+                depositAmount <= 0
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Invalid deposit amount."
+                });
+
+            }
+
+            const updatedBalance =
+                (Number(account.balance) || 0) +
+                depositAmount;
+
+            const result =
+                await accountsCollection.updateOne(
+
+                    {
+                        id: accountId,
+                        "transactions.reference":
+                            reference,
+                        "transactions.status":
+                            "Pending"
+                    },
+
+                    {
+                        $set: {
+                            balance:
+                                updatedBalance,
+
+                            "transactions.$.status":
+                                "Approved",
+
+                            "transactions.$.approvedAt":
+                                new Date()
+                        }
+                    }
+
+                );
+
+            if (result.modifiedCount === 0) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Deposit could not be approved."
+                });
+
+            }
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Deposit approved successfully.",
+
+                balance:
+                    updatedBalance
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Approve deposit error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to approve deposit."
+            });
+
+        }
+
+    }
+);
+
 
 // ==========================================
 // CREATE DEMO ACCOUNT
