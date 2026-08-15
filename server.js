@@ -1192,7 +1192,8 @@ app.post(
             const {
                 accountId,
                 amount,
-                method
+                method,
+                accountInfo
             } = req.body;
 
             const depositAmount =
@@ -1263,6 +1264,9 @@ app.post(
 
                 method:
                     method,
+
+                accountInfo:
+                    accountInfo || "",
 
                 status:
                     "Pending",

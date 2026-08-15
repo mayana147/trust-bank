@@ -1613,81 +1613,164 @@ function showDepositPage() {
 
 
                 <label>
-                    Deposit Method
-                </label>
+                     Deposit Method
+                 </label>
 
-                <select id="depositMethod">
+                 <select id="depositMethod">
 
-                    <option value="">
-                        Select a method
-                    </option>
+                     <option value="">
+                         Select a method
+                     </option>
 
-                    <option value="Cash App">
-                        Cash App
-                    </option>
+                 <option value="Cash App">
+                     Cash App
+                 </option>
 
-                    <option value="Zelle">
-                        Zelle
-                    </option>
+                 <option value="Zelle">
+                     Zelle
+                 </option>
 
-                    <option value="Bitcoin">
-                        Bitcoin
-                    </option>
+                 <option value="Bitcoin">
+                     Bitcoin
+                 </option>
 
-                    <option value="Card">
-                        Card
-                    </option>
+                 <option value="Card">
+                     Card
+                 </option>
 
-                </select>
-
-
-                <label>
-                    Amount
-                </label>
-
-                <div class="money-input">
-
-                    <span>
-                        ${escapeHtml(currency)}
-                    </span>
-
-                    <input
-                        id="depositAmount"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="0.00"
-                    >
-
-                </div>
+                 </select>
 
 
-                <button
-                    id="submitDeposit"
-                    class="primary-bank-button"
-                >
-                    Submit Deposit
-                </button>
+                 <div
+                     id="depositAccountField"
+                     style="display: none;"
+                 >
+
+                     <label id="depositAccountLabel">
+                         Account Information
+                     </label>
+
+                     <input
+                         id="depositAccount"
+                         type="text"
+                         placeholder=""
+                     >
+
+                 </div>
 
 
-                <button
-                    id="cancelDeposit"
-                    class="secondary-bank-button"
-                >
-                    Cancel
-                </button>
+                     <label>
+                         Amount
+                     </label>
+
+                 <div class="money-input">
+
+                     <span>
+                         ${escapeHtml(currency)}
+                     </span>
+
+                 <input
+                     id="depositAmount"
+                     type="number"
+                     min="0.01"
+                     step="0.01"
+                     placeholder="0.00"
+                 >
+
+             </div>
 
 
-                <div
-                    id="depositMessage"
-                    class="bank-form-message"
-                ></div>
+             <button
+                 id="submitDeposit"
+                 class="primary-bank-button"
+             >
+                 Submit Deposit
+             </button>
 
-            </section>
 
-        </main>
+             <button
+                 id="cancelDeposit"
+                 class="secondary-bank-button"
+             >
+                 Cancel
+             </button>
 
-    `;
+
+         <div
+             id="depositMessage"
+             class="bank-form-message"
+         ></div>
+
+         </section>
+
+         </main>
+
+         `;
+
+         const depositMethod =
+             document.getElementById("depositMethod");
+
+         const depositAccountField =
+             document.getElementById("depositAccountField");
+
+         const depositAccountLabel =
+             document.getElementById("depositAccountLabel");
+
+         const depositAccount =
+             document.getElementById("depositAccount");
+
+
+         depositMethod.addEventListener(
+             "change",
+             function () {
+
+             const method =
+                 depositMethod.value;
+
+             if (method === "Zelle") {
+
+                 depositAccountField.style.display =
+                     "block";
+
+                 depositAccountLabel.textContent =
+                     "Zelle number or email";
+
+                 depositAccount.placeholder =
+                     "Enter Zelle number or email";
+
+             } else if (method === "Cash App") {
+
+                 depositAccountField.style.display =
+                     "block";
+
+                 depositAccountLabel.textContent =
+                     "Cash App name";
+
+                 depositAccount.placeholder =
+                     "Enter Cash App name";
+
+             } else if (method === "Bitcoin") {
+
+                 depositAccountField.style.display =
+                     "block";
+
+                 depositAccountLabel.textContent =
+                     "Bitcoin wallet address";
+
+                 depositAccount.placeholder =
+                     "Enter Bitcoin wallet address";
+
+             } else {
+
+                 depositAccountField.style.display =
+                     "none";
+
+                 depositAccount.value = "";
+
+                 }
+
+             }
+         );
 
 
     document
@@ -1937,6 +2020,12 @@ async function submitWithdrawalRequest() {
                 .getElementById("withdrawAmount")
                 .value
         );
+    
+    const accountInfo =
+         document
+             .getElementById("depositAccount")
+             .value
+             .trim();
 
     const message =
         document
@@ -1963,6 +2052,25 @@ async function submitWithdrawalRequest() {
         return;
     }
 
+    if (
+    (
+        method === "Zelle" ||
+        method === "Cash App" ||
+        method === "Bitcoin"
+    ) &&
+    !accountInfo
+) {
+
+    message.textContent =
+        method === "Zelle"
+            ? "Please enter your Zelle number or email."
+            : method === "Cash App"
+                ? "Please enter your Cash App name."
+                : "Please enter your Bitcoin wallet address.";
+
+    return;
+}
+
 
     try {
 
@@ -1988,7 +2096,10 @@ async function submitWithdrawalRequest() {
                                 amount,
 
                             method:
-                                method
+                                method,
+                                
+                            accountInfo:
+                                accountInfo
 
                         })
 
