@@ -540,337 +540,741 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function showDashboard() {
 
-        const accountLoaded =
-            await loadCustomerAccount();
+    const accountLoaded = await loadCustomerAccount();
 
+    if (!accountLoaded) {
+        return;
+    }
 
-        if (!accountLoaded) {
-            return;
-        }
+    const unreadCount =
+        notifications.filter(function (item) {
+            return !item.read;
+        }).length;
 
+    const name =
+        CURRENT_ACCOUNT.name ||
+        "Customer";
 
-        const unreadCount =
-            notifications.filter(
-                function (item) {
-                    return !item.read;
-                }
-            ).length;
+    const accountNumber =
+        CURRENT_ACCOUNT.accountNumber ||
+        "N/A";
 
+    const accountType =
+        CURRENT_ACCOUNT.accountType ||
+        "Current Account";
 
-        const name =
-            CURRENT_ACCOUNT.name ||
-            "Customer";
+    const currency =
+        CURRENT_ACCOUNT.currency ||
+        "$";
 
+    // =====================================================
+    // RECENT TRANSACTIONS
+    // =====================================================
 
-        const accountNumber =
-            CURRENT_ACCOUNT.accountNumber ||
-            "N/A";
+    const recentTransactions =
+        transactions.slice(0, 5);
 
+    let transactionHTML = "";
 
-        const accountType =
-            CURRENT_ACCOUNT.accountType ||
-            "Current Account";
+    if (recentTransactions.length === 0) {
 
-
-        const currency =
-            CURRENT_ACCOUNT.currency ||
-            "$";
-
-
-        document.body.innerHTML = `
-
-            <header class="bank-header">
-
-                <div class="bank-logo">
-                    Trust Bank
-                </div>
-
-
-                <nav class="bank-nav">
-
-                    <button id="navHome">
-                        Home
-                    </button>
-
-                    <button id="navHistory">
-                        Transactions
-                    </button>
-
-                    <button id="navNotifications">
-                        Notifications
-                        ${
-                            unreadCount > 0
-                                ? `(${unreadCount})`
-                                : ""
-                        }
-                    </button>
-
-                    <button id="navLogout">
-                        Logout
-                    </button>
-
-                </nav>
-
-            </header>
-
-
-            <div class="dashboard">
-
-                <h1>
-                    Welcome to Trust Bank
-                </h1>
+        transactionHTML = `
+            <div class="empty-transactions">
+                <div class="empty-icon">↔</div>
 
                 <p>
-                    Welcome,
-                    ${escapeHtml(name)}
+                    No transactions yet
                 </p>
 
+                <span>
+                    Your recent transactions will appear here.
+                </span>
+            </div>
+        `;
 
-                <div class="balance-card">
+    } else {
 
-                    <h2>
-                        Available Balance
-                    </h2>
+        recentTransactions.forEach(function (transaction) {
+
+            const description =
+                transaction.description ||
+                transaction.type ||
+                "Transaction";
+
+            const amount =
+                Number(transaction.amount || 0);
+
+            /*
+             * Transfers and bill payments are outgoing.
+             * Explicit credits/incoming transactions are green.
+             */
+
+            const transactionType =
+                String(
+                    transaction.type ||
+                    ""
+                ).toLowerCase();
+
+            const descriptionText =
+                String(
+                    transaction.description ||
+                    ""
+                ).toLowerCase();
+
+            const isCredit =
+                transaction.direction === "credit" ||
+                transaction.credit === true ||
+                transactionType === "deposit" ||
+                transactionType === "salary" ||
+                transactionType === "credit" ||
+                descriptionText.includes("deposit") ||
+                descriptionText.includes("salary");
+
+            const amountClass =
+                isCredit
+                    ? "transaction-credit"
+                    : "transaction-debit";
+
+            const amountPrefix =
+                isCredit
+                    ? "+"
+                    : "-";
+
+            const status =
+                transaction.status ||
+                "Successful";
+
+            const statusClass =
+                String(status).toLowerCase() === "successful"
+                    ? "status-success"
+                    : "status-other";
+
+            transactionHTML += `
+
+                <div class="dashboard-transaction">
+
+                    <div class="transaction-icon ${
+                        isCredit
+                            ? "credit-icon"
+                            : "debit-icon"
+                    }">
+
+                        ${
+                            isCredit
+                                ? "↓"
+                                : "↑"
+                        }
+
+                    </div>
+
+
+                    <div class="transaction-main">
+
+                        <strong>
+                            ${escapeHtml(description)}
+                        </strong>
+
+                        <span>
+                            ${
+                                escapeHtml(
+                                    transaction.recipient ||
+                                    transaction.bank ||
+                                    transaction.type ||
+                                    "Bank Transaction"
+                                )
+                            }
+                        </span>
+
+                        <small>
+                            ${escapeHtml(
+                                transaction.date ||
+                                ""
+                            )}
+                        </small>
+
+                    </div>
+
+
+                    <div class="transaction-amount">
+
+                        <strong class="${amountClass}">
+                            ${amountPrefix}${escapeHtml(currency)}
+                            ${formatMoney(amount)}
+                        </strong>
+
+                        <span class="${statusClass}">
+                            ${escapeHtml(status)}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+        });
+    }
+
+
+    // =====================================================
+    // VIRTUAL CARD
+    // =====================================================
+
+    const cardHolder =
+        (
+            CURRENT_ACCOUNT.name ||
+            "CUSTOMER"
+        ).toUpperCase();
+
+    const cardDigits =
+        String(accountNumber)
+            .replace(/\s/g, "")
+            .slice(-4) ||
+        "4821";
+
+
+    document.body.innerHTML = `
+
+        <header class="bank-header">
+
+            <div class="bank-logo">
+                TRUST BANK
+            </div>
+
+
+            <nav class="bank-nav">
+
+                <button id="navHome">
+                    Home
+                </button>
+
+                <button id="navHistory">
+                    Transactions
+                </button>
+
+                <button id="navNotifications">
+                    Notifications
+                    ${
+                        unreadCount > 0
+                            ? `(${unreadCount})`
+                            : ""
+                    }
+                </button>
+
+                <button id="navLogout">
+                    Logout
+                </button>
+
+            </nav>
+
+        </header>
+
+
+        <main class="dashboard">
+
+            <div class="dashboard-welcome">
+
+                <div>
+
+                    <p class="dashboard-label">
+                        TRUST BANK
+                    </p>
 
                     <h1>
-                        ${escapeHtml(currency)}
-                        ${formatMoney(balance)}
+                        Welcome back,
+                        ${escapeHtml(name)}
                     </h1>
 
-                </div>
-
-
-                <div class="account-card">
-
-                    <h2>
-                        Account Details
-                    </h2>
-
-
-                    <div class="account-row">
-
-                        <span>
-                            Account Holder
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(name)}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="account-row">
-
-                        <span>
-                            Account Number
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(accountNumber)}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="account-row">
-
-                        <span>
-                            Account Type
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(accountType)}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="account-row">
-
-                        <span>
-                            Currency
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(currency)}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="account-row">
-
-                        <span>
-                            Status
-                        </span>
-
-                        <strong>
-                            ${escapeHtml(
-                                CURRENT_ACCOUNT.status ||
-                                "Active"
-                            )}
-                        </strong>
-
-                    </div>
-
-                </div>
-
-
-                <div class="dashboard-buttons">
-
-                    <button id="transferBtn">
-                        Transfer Money
-                    </button>
-
-                    <button id="billsBtn">
-                        Pay Bills
-                    </button>
-
-                    <button id="profileBtn">
-                        My Account
-                    </button>
-
-                    <button id="cardsBtn">
-                        My Cards
-                    </button>
-
-                    <button id="notificationsBtn">
-                        Notifications
-                        ${
-                            unreadCount > 0
-                                ? `(${unreadCount})`
-                                : ""
-                        }
-                    </button>
-
-                    <button id="securityBtn">
-                        Settings & Privacy
-                    </button>
-
-                    <button id="historyBtn">
-                        Transaction History
-                    </button>
-
-                    <button id="logoutBtn">
-                        Logout
-                    </button>
+                    <p class="dashboard-subtitle">
+                        Manage your account securely.
+                    </p>
 
                 </div>
 
             </div>
 
 
-            <footer class="bank-footer">
+            <!-- =========================================
+                 BALANCE
+                 ========================================= -->
 
-                <p>
-                    © 2026 Trust Bank
-                </p>
+            <section class="balance-card">
 
-                <p>
-                    Secure Banking Portal
-                </p>
+                <div class="balance-top">
 
-            </footer>
+                    <span>
+                        Available Balance
+                    </span>
 
-        `;
+                    <button
+                        id="toggleBalance"
+                        class="balance-eye"
+                        type="button"
+                    >
+                        👁
+                    </button>
 
-
-        document
-            .getElementById("navHome")
-            .addEventListener(
-                "click",
-                showDashboard
-            );
-
-
-        document
-            .getElementById("navHistory")
-            .addEventListener(
-                "click",
-                showHistoryPage
-            );
+                </div>
 
 
-        document
-            .getElementById("navNotifications")
-            .addEventListener(
-                "click",
-                showNotificationsPage
-            );
+                <h1 id="dashboardBalance">
+                    ${escapeHtml(currency)}
+                    ${formatMoney(balance)}
+                </h1>
 
 
-        document
-            .getElementById("navLogout")
-            .addEventListener(
-                "click",
-                logout
-            );
+                <div class="balance-account">
+
+                    <span>
+                        Account
+                    </span>
+
+                    <strong>
+                        •••• ${escapeHtml(
+                            String(accountNumber).slice(-4)
+                        )}
+                    </strong>
+
+                </div>
+
+            </section>
 
 
-        document
-            .getElementById("transferBtn")
-            .addEventListener(
-                "click",
-                showTransferPage
-            );
+            <!-- =========================================
+                 QUICK ACTIONS
+                 ========================================= -->
+
+            <section class="quick-actions">
+
+                <button
+                    class="quick-action transfer-action"
+                    id="transferBtn"
+                >
+
+                    <span class="quick-icon">
+                        ↔
+                    </span>
+
+                    <span>
+                        Transfer
+                    </span>
+
+                </button>
 
 
-        document
-            .getElementById("billsBtn")
-            .addEventListener(
-                "click",
-                showBillsPage
-            );
+                <button
+                    class="quick-action"
+                    id="depositBtn"
+                >
+
+                    <span class="quick-icon">
+                        +
+                    </span>
+
+                    <span>
+                        Deposit
+                    </span>
+
+                </button>
 
 
-        document
-            .getElementById("profileBtn")
-            .addEventListener(
-                "click",
-                showProfilePage
-            );
+                <button
+                    class="quick-action"
+                    id="withdrawBtn"
+                >
+
+                    <span class="quick-icon">
+                        ↓
+                    </span>
+
+                    <span>
+                        Withdraw
+                    </span>
+
+                </button>
 
 
-        document
-            .getElementById("cardsBtn")
-            .addEventListener(
-                "click",
-                showCardsPage
-            );
+                <button
+                    class="quick-action"
+                    id="billsBtn"
+                >
+
+                    <span class="quick-icon">
+                        ▣
+                    </span>
+
+                    <span>
+                        Bills
+                    </span>
+
+                </button>
+
+            </section>
 
 
-        document
-            .getElementById("notificationsBtn")
-            .addEventListener(
-                "click",
-                showNotificationsPage
-            );
+            <!-- =========================================
+                 VIRTUAL CARD
+                 ========================================= -->
+
+            <section class="dashboard-section">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <span class="section-label">
+                            YOUR CARD
+                        </span>
+
+                        <h2>
+                            Virtual Card
+                        </h2>
+
+                    </div>
 
 
-        document
-            .getElementById("securityBtn")
-            .addEventListener(
-                "click",
-                showSecurityPage
-            );
+                    <button
+                        id="manageCardBtn"
+                        class="text-button"
+                    >
+                        Manage
+                    </button>
+
+                </div>
 
 
-        document
-            .getElementById("historyBtn")
-            .addEventListener(
-                "click",
-                showHistoryPage
-            );
+                <div class="dashboard-virtual-card">
+
+                    <div class="virtual-card-top">
+
+                        <strong>
+                            TRUST BANK
+                        </strong>
+
+                        <span>
+                            VIRTUAL
+                        </span>
+
+                    </div>
 
 
-        document
-            .getElementById("logoutBtn")
-            .addEventListener(
-                "click",
-                logout
-            );
-    }
+                    <div class="virtual-card-chip"></div>
+
+
+                    <div class="virtual-card-number">
+                        •••• •••• •••• ${escapeHtml(cardDigits)}
+                    </div>
+
+
+                    <div class="virtual-card-bottom">
+
+                        <div>
+
+                            <small>
+                                CARD HOLDER
+                            </small>
+
+                            <strong>
+                                ${escapeHtml(cardHolder)}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <small>
+                                EXPIRES
+                            </small>
+
+                            <strong>
+                                12/30
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="virtual-card-status">
+
+                        <span class="${
+                            cardFrozen
+                                ? "card-status-frozen"
+                                : "card-status-active"
+                        }">
+
+                            ${
+                                cardFrozen
+                                    ? "● Frozen"
+                                    : "● Active"
+                            }
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =========================================
+                 TRANSACTIONS
+                 ========================================= -->
+
+            <section class="dashboard-section">
+
+                <div class="section-heading">
+
+                    <div>
+
+                        <span class="section-label">
+                            ACCOUNT ACTIVITY
+                        </span>
+
+                        <h2>
+                            Recent Transactions
+                        </h2>
+
+                    </div>
+
+
+                    <button
+                        id="viewAllHistory"
+                        class="text-button"
+                    >
+                        View All
+                    </button>
+
+                </div>
+
+
+                <div class="dashboard-transactions">
+
+                    ${transactionHTML}
+
+                </div>
+
+            </section>
+
+
+            <!-- =========================================
+                 ACCOUNT INFORMATION
+                 ========================================= -->
+
+            <section class="dashboard-account-summary">
+
+                <div>
+
+                    <span>
+                        Account Holder
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(name)}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Account Number
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(accountNumber)}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Account Type
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(accountType)}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Status
+                    </span>
+
+                    <strong class="account-active">
+                        ${escapeHtml(
+                            CURRENT_ACCOUNT.status ||
+                            "Active"
+                        )}
+                    </strong>
+
+                </div>
+
+            </section>
+
+
+        </main>
+
+
+        <footer class="bank-footer">
+
+            <p>
+                ©️ 2026 Trust Bank
+            </p>
+
+            <p>
+                Secure Banking Portal
+            </p>
+
+        </footer>
+
+    `;
+
+
+    // =====================================================
+    // BALANCE HIDE / SHOW
+    // =====================================================
+
+    let balanceVisible = true;
+
+    document
+        .getElementById("toggleBalance")
+        .addEventListener(
+            "click",
+            function () {
+
+                balanceVisible =
+                    !balanceVisible;
+
+                document
+                    .getElementById(
+                        "dashboardBalance"
+                    )
+                    .textContent =
+                    balanceVisible
+                        ? `${currency}${formatMoney(balance)}`
+                        : "••••••••";
+
+                this.textContent =
+                    balanceVisible
+                        ? "👁"
+                        : "🙈";
+            }
+        );
+
+
+    // =====================================================
+    // NAVIGATION
+    // =====================================================
+
+    document
+        .getElementById("navHome")
+        .addEventListener(
+            "click",
+            showDashboard
+        );
+
+
+    document
+        .getElementById("navHistory")
+        .addEventListener(
+            "click",
+            showHistoryPage
+        );
+
+
+    document
+        .getElementById("navNotifications")
+        .addEventListener(
+            "click",
+            showNotificationsPage
+        );
+
+
+    document
+        .getElementById("navLogout")
+        .addEventListener(
+            "click",
+            logout
+        );
+
+
+    // =====================================================
+    // QUICK ACTIONS
+    // =====================================================
+
+    document
+        .getElementById("transferBtn")
+        .addEventListener(
+            "click",
+            showTransferPage
+        );
+
+
+    document
+        .getElementById("billsBtn")
+        .addEventListener(
+            "click",
+            showBillsPage
+        );
+
+
+    document
+        .getElementById("manageCardBtn")
+        .addEventListener(
+            "click",
+            showCardsPage
+        );
+
+
+    document
+        .getElementById("viewAllHistory")
+        .addEventListener(
+            "click",
+            showHistoryPage
+        );
+
+
+    // Deposit / Withdraw are design buttons for now.
+    // We will connect them to backend operations when those
+    // endpoints exist.
+
+    document
+        .getElementById("depositBtn")
+        .addEventListener(
+            "click",
+            function () {
+
+                alert(
+                    "Deposit service will be connected to your banking backend."
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById("withdrawBtn")
+        .addEventListener(
+            "click",
+            function () {
+
+                alert(
+                    "Withdrawal service will be connected to your banking backend."
+                );
+
+            }
+        );
+
+}
 
 
     // =========================================================
@@ -2494,33 +2898,51 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function showHistoryPage() {
 
-        let html = "";
+    let html = "";
 
+    if (transactions.length === 0) {
 
-        if (
-            transactions.length === 0
-        ) {
+        html = `
+            <div class="history-empty">
+                <div class="history-empty-icon">↔</div>
 
-            html = `
+                <h3>No transactions yet</h3>
 
-                <div class="transaction-item">
+                <p>
+                    Your completed transactions will appear here.
+                </p>
+            </div>
+        `;
 
-                    <p>
-                        No transactions yet.
-                    </p>
+    } else {
 
-                </div>
+        transactions.forEach(function (transaction) {
 
-            `;
+            const amount =
+                Number(transaction.amount || 0);
 
-        } else {
+            const isIncoming =
+                transaction.type === "credit" ||
+                transaction.type === "deposit" ||
+                transaction.type === "received";
 
-            transactions.forEach(
-                function (transaction) {
+            html += `
 
-                    html += `
+                <div class="history-transaction">
 
-                        <div class="transaction-item">
+                    <div class="history-left">
+
+                        <div class="history-icon ${
+                            isIncoming
+                                ? "history-icon-incoming"
+                                : "history-icon-outgoing"
+                        }">
+
+                            ${isIncoming ? "↓" : "↑"}
+
+                        </div>
+
+                        <div class="history-details">
 
                             <strong>
                                 ${escapeHtml(
@@ -2530,33 +2952,13 @@ document.addEventListener("DOMContentLoaded", function () {
                                 )}
                             </strong>
 
-
-                            <p>
-                                Recipient:
-                                ${escapeHtml(
-                                    transaction.recipient ||
-                                    "N/A"
-                                )}
-                            </p>
-
-
-                            <p>
-                                Amount:
-                                ${currencySymbol()}
-                                ${formatMoney(
-                                    transaction.amount
-                                )}
-                            </p>
-
-
-                            <p>
-                                Reference:
-                                ${escapeHtml(
-                                    transaction.reference ||
-                                    "N/A"
-                                )}
-                            </p>
-
+                            <span>
+                                ${
+                                    isIncoming
+                                        ? "Money received"
+                                        : "Transfer"
+                                }
+                            </span>
 
                             <small>
                                 ${escapeHtml(
@@ -2567,47 +2969,118 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         </div>
 
-                    `;
-
-                }
-            );
-
-        }
+                    </div>
 
 
-        document.body.innerHTML = `
+                    <div class="history-right">
 
-            <div class="transfer-page">
+                        <strong class="${
+                            isIncoming
+                                ? "history-credit"
+                                : "history-debit"
+                        }">
 
-                <h1>
-                    Transaction History
-                </h1>
+                            ${isIncoming ? "+" : "-"}
+
+                            ${currencySymbol()}
+                            ${formatMoney(amount)}
+
+                        </strong>
+
+                        <span>
+                            ${
+                                transaction.reference
+                                    ? "Ref: " +
+                                      escapeHtml(
+                                          transaction.reference
+                                      )
+                                    : ""
+                            }
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        });
+
+    }
 
 
-                <div class="transaction-list">
+    document.body.innerHTML = `
+
+        <div class="history-page">
+
+            <div class="history-header">
+
+                <button
+                    id="backDashboard"
+                    class="history-back"
+                >
+                    ← Back
+                </button>
+
+                <div>
+
+                    <h1>
+                        Transaction History
+                    </h1>
+
+                    <p>
+                        View your recent account activity
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="history-card">
+
+                <div class="history-card-header">
+
+                    <div>
+
+                        <h2>
+                            Recent Transactions
+                        </h2>
+
+                        <p>
+                            ${transactions.length}
+                            transaction${
+                                transactions.length === 1
+                                    ? ""
+                                    : "s"
+                            }
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="history-list">
 
                     ${html}
 
                 </div>
 
-
-                <button id="backDashboard">
-                    Back to Dashboard
-                </button>
-
             </div>
 
-        `;
+        </div>
+
+    `;
 
 
-        document
-            .getElementById("backDashboard")
-            .addEventListener(
-                "click",
-                showDashboard
-            );
-    }
-
+    document
+        .getElementById("backDashboard")
+        .addEventListener(
+            "click",
+            showDashboard
+        );
+}
 
     // =========================================================
     // LOGOUT
